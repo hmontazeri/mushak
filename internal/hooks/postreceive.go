@@ -70,6 +70,12 @@ while read oldrev newrev refname; do
 
     cd $DEPLOY_DIR
 
+    # Copy .env if exists
+    if [ -f "/var/www/$APP_NAME/.env" ]; then
+        echo "→ Loading environment variables..."
+        cp "/var/www/$APP_NAME/.env" .
+    fi
+
     echo ""
     echo "→ Reading configuration..."
 
@@ -140,7 +146,13 @@ EOF
     else
         # Dockerfile
         docker build -t $PROJECT_NAME .
-        docker run -d --name $PROJECT_NAME -p $HOST_PORT:$INTERNAL_PORT $PROJECT_NAME
+
+        ENV_OPTS=""
+        if [ -f ".env" ]; then
+            ENV_OPTS="--env-file .env"
+        fi
+
+        docker run -d --name $PROJECT_NAME $ENV_OPTS -p $HOST_PORT:$INTERNAL_PORT $PROJECT_NAME
         CONTAINER_NAME=$PROJECT_NAME
     fi
 
