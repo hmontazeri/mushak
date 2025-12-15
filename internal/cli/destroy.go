@@ -81,6 +81,7 @@ func runDestroy(cmd *cobra.Command, args []string) error {
 
 	// Confirm destruction
 	if !destroyForce {
+		fmt.Printf("\n→ To confirm, type the app name exactly: %s\n", destroyApp)
 		confirmed, err := utils.ConfirmDanger(
 			"Are you absolutely sure?",
 			destroyApp,
@@ -90,7 +91,7 @@ func runDestroy(cmd *cobra.Command, args []string) error {
 		}
 
 		if !confirmed {
-			fmt.Println("\nDestroy cancelled.")
+			fmt.Println("\n✗ App name did not match. Destroy cancelled.")
 			return nil
 		}
 	}

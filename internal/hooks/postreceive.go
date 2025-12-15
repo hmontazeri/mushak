@@ -70,10 +70,17 @@ while read oldrev newrev refname; do
 
     cd $DEPLOY_DIR
 
-    # Copy .env if exists
-    if [ -f "/var/www/$APP_NAME/.env" ]; then
-        echo "→ Loading environment variables..."
-        cp "/var/www/$APP_NAME/.env" .
+    # Copy environment file (try .env.prod first, then .env)
+    if [ -f "/var/www/$APP_NAME/.env.prod" ]; then
+        echo "→ Loading environment variables from .env.prod..."
+        cp "/var/www/$APP_NAME/.env.prod" .env.prod
+        # Also copy to .env for compatibility
+        cp "/var/www/$APP_NAME/.env.prod" .env
+    elif [ -f "/var/www/$APP_NAME/.env" ]; then
+        echo "→ Loading environment variables from .env..."
+        cp "/var/www/$APP_NAME/.env" .env
+    else
+        echo "⚠ No .env.prod or .env file found. Use 'mushak env set' to configure environment variables."
     fi
 
     echo ""
@@ -113,9 +120,16 @@ while read oldrev newrev refname; do
         COMPOSE_FILE="docker-compose.yml"
         [ -f "docker-compose.yaml" ] && COMPOSE_FILE="docker-compose.yaml"
 
-        # Get the first service name (skip 'version' and 'services' keys)
-        SERVICE_NAME=$(grep -E "^  [a-zA-Z0-9_-]+:" $COMPOSE_FILE | head -1 | sed 's/://g' | tr -d ' ')
-        echo "  Service name: $SERVICE_NAME"
+        # Get the service name - prefer one with 'web' in the name, otherwise use first
+        WEB_SERVICE=$(grep -E "^  [a-zA-Z0-9_-]*web[a-zA-Z0-9_-]*:" $COMPOSE_FILE | head -1 | sed 's/://g' | tr -d ' ')
+
+        if [ -n "$WEB_SERVICE" ]; then
+            SERVICE_NAME=$WEB_SERVICE
+            echo "  Service name: $SERVICE_NAME (detected web service)"
+        else
+            SERVICE_NAME=$(grep -E "^  [a-zA-Z0-9_-]+:" $COMPOSE_FILE | head -1 | sed 's/://g' | tr -d ' ')
+            echo "  Service name: $SERVICE_NAME (using first service - no 'web' service found)"
+        fi
 
         # Create override file with port mapping
         cat > docker-compose.override.yml <<EOF

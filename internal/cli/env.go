@@ -77,23 +77,36 @@ func runEnvSet(cmd *cobra.Command, args []string) error {
 
 	executor := ssh.NewExecutor(client)
 
+	// Try .env.prod first, then .env (prefer .env.prod for production deployments)
+	envProdPath := fmt.Sprintf("/var/www/%s/.env.prod", cfg.AppName)
 	envPath := fmt.Sprintf("/var/www/%s/.env", cfg.AppName)
 
-	// Read existing .env
 	var currentContent string
-	if out, err := executor.Run("cat " + envPath); err == nil {
+	var targetPath string
+
+	// Check which env file exists, prefer .env.prod
+	if out, err := executor.Run("cat " + envProdPath); err == nil {
 		currentContent = out
+		targetPath = envProdPath
+		fmt.Println("  Using existing .env.prod")
+	} else if out, err := executor.Run("cat " + envPath); err == nil {
+		currentContent = out
+		targetPath = envPath
+		fmt.Println("  Using existing .env")
+	} else {
+		// Neither exists, create .env.prod by default
+		targetPath = envProdPath
+		fmt.Println("  Creating new .env.prod")
 	}
-	// If it fails, assume file missing and start empty
 
 	newContent := updateEnvFile(currentContent, updates)
 
 	// Write back
-	fmt.Println("→ Updating .env file...")
-	if err := executor.WriteFileSudo(envPath, newContent); err != nil {
-		return fmt.Errorf("failed to write .env: %w", err)
+	fmt.Println("→ Updating environment file...")
+	if err := executor.WriteFileSudo(targetPath, newContent); err != nil {
+		return fmt.Errorf("failed to write environment file: %w", err)
 	}
-	fmt.Println("✓ Updated .env file")
+	fmt.Printf("✓ Updated %s\n", targetPath)
 
 	// Update deployment hook (to ensure it supports .env)
 	fmt.Println("→ Updating deployment hook...")

@@ -194,12 +194,18 @@ Open an interactive shell in your application container.
 mushak exec
 ```
 
-### `mushak secure-env`
+### `mushak env set`
 
 Securely set environment variables for your application.
 
+Mushak manages environment variables with the following priority:
+1. First checks for `.env.prod` on the server
+2. Falls back to `.env` if `.env.prod` doesn't exist
+3. Creates `.env.prod` by default if neither exists
+4. During deployment, copies the environment file to each release
+
 ```bash
-mushak secure-env KEY=VALUE
+mushak env set DATABASE_PASSWORD=secret RAILS_MASTER_KEY=abc123
 ```
 
 
@@ -316,7 +322,7 @@ Check the output from `mushak deploy`. Common issues:
 - [ ] Rollback to previous deployment
 - [x] Log viewing (`mushak logs`)
 - [x] SSH access (`mushak exec`)
-- [x] Environment variable management (`mushak secure-env`)
+- [x] Environment variable management (`mushak env set`)
 - [ ] Database migrations support
 - [ ] Custom health check commands
 
