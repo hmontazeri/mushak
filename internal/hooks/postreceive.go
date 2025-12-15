@@ -87,6 +87,7 @@ while read oldrev newrev refname; do
     echo "→ Reading configuration..."
 
     # Read mushak.yaml if it exists
+    CUSTOM_PERSISTENT_SERVICES=""
     if [ -f "mushak.yaml" ]; then
         echo "  Found mushak.yaml"
 
@@ -104,6 +105,12 @@ while read oldrev newrev refname; do
         if grep -q "health_timeout:" mushak.yaml; then
             HEALTH_TIMEOUT=$(grep "health_timeout:" mushak.yaml | awk '{print $2}')
             echo "  Health timeout: $HEALTH_TIMEOUT"
+        fi
+
+        # Read persistent_services array (simple parsing)
+        if grep -q "persistent_services:" mushak.yaml; then
+            CUSTOM_PERSISTENT_SERVICES=$(grep -A 10 "persistent_services:" mushak.yaml | grep "^  - " | sed 's/^  - //' | tr '\n' ' ')
+            echo "  Persistent services: $CUSTOM_PERSISTENT_SERVICES"
         fi
     else
         echo "  Using defaults (internal_port=$INTERNAL_PORT, health_path=$HEALTH_PATH)"
@@ -154,8 +161,89 @@ EOF
     echo "→ Building and starting containers..."
 
     if [ "$BUILD_METHOD" = "compose" ]; then
-        # Docker Compose
-        docker compose -p $PROJECT_NAME up -d --build
+        # Detect infrastructure services (databases, caches, etc.) that should persist
+        # These services won't be restarted on redeployments
+        INFRASTRUCTURE_IMAGES="postgres|mysql|mariadb|mongodb|mongo|redis|memcached|rabbitmq|elasticsearch|timescale"
+
+        # Get list of all services
+        ALL_SERVICES=$(docker compose -p $PROJECT_NAME config --services 2>/dev/null || grep -E "^  [a-zA-Z0-9_-]+:" $COMPOSE_FILE | sed 's/://g' | tr -d ' ')
+
+        # Identify infrastructure vs application services
+        INFRA_SERVICES=""
+        APP_SERVICES=""
+
+        for service in $ALL_SERVICES; do
+            # Check if service is in custom persistent list
+            IS_CUSTOM_PERSISTENT=0
+            for custom_svc in $CUSTOM_PERSISTENT_SERVICES; do
+                if [ "$service" = "$custom_svc" ]; then
+                    IS_CUSTOM_PERSISTENT=1
+                    break
+                fi
+            done
+
+            if [ $IS_CUSTOM_PERSISTENT -eq 1 ]; then
+                INFRA_SERVICES="$INFRA_SERVICES $service"
+            else
+                # Check if service uses an infrastructure image
+                IMAGE=$(grep -A 5 "^  ${service}:" $COMPOSE_FILE | grep "image:" | head -1 | awk '{print $2}' | cut -d: -f1)
+
+                if echo "$IMAGE" | grep -qE "$INFRASTRUCTURE_IMAGES"; then
+                    INFRA_SERVICES="$INFRA_SERVICES $service"
+                else
+                    APP_SERVICES="$APP_SERVICES $service"
+                fi
+            fi
+        done
+
+        echo "  Infrastructure services: ${INFRA_SERVICES:-none}"
+        echo "  Application services: ${APP_SERVICES:-all}"
+
+        # Check if docker-compose has custom container names
+        HAS_CUSTOM_NAMES=$(grep -E "^\s*container_name:" docker-compose.yml docker-compose.yaml 2>/dev/null || true)
+
+        if [ -n "$HAS_CUSTOM_NAMES" ]; then
+            echo "  ⚠ Warning: Custom container_name detected."
+            echo "  Stopping previous application containers..."
+
+            # Only stop application services, keep infrastructure running
+            docker ps -a --format "{{.Names}}" | grep -E "^(mushak-)?${APP_NAME}[_-]" | while read container; do
+                # Check if this container is infrastructure (by checking if name contains infra service names)
+                IS_INFRA=0
+                for infra_svc in $INFRA_SERVICES; do
+                    if echo "$container" | grep -q "$infra_svc"; then
+                        IS_INFRA=1
+                        break
+                    fi
+                done
+
+                if [ $IS_INFRA -eq 0 ]; then
+                    echo "    Stopping $container"
+                    docker stop $container 2>/dev/null || true
+                    docker rm $container 2>/dev/null || true
+                else
+                    echo "    Keeping $container (infrastructure)"
+                fi
+            done
+        fi
+
+        # Start infrastructure services first if not running
+        if [ -n "$INFRA_SERVICES" ]; then
+            echo "  Ensuring infrastructure services are running..."
+            for infra_svc in $INFRA_SERVICES; do
+                docker compose -p $PROJECT_NAME up -d --no-build $infra_svc 2>/dev/null || true
+            done
+        fi
+
+        # Build and deploy application services only
+        if [ -n "$APP_SERVICES" ]; then
+            echo "  Building and deploying application services..."
+            docker compose -p $PROJECT_NAME up -d --build $APP_SERVICES
+        else
+            # Fallback: deploy everything if we couldn't categorize
+            docker compose -p $PROJECT_NAME up -d --build
+        fi
+
         CONTAINER_NAME="${PROJECT_NAME}-${SERVICE_NAME}-1"
     else
         # Dockerfile

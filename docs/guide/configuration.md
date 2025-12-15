@@ -18,6 +18,42 @@ health_path: /api/health
 # How long to wait for the app to become healthy before failing the deploy.
 # Default: 30 (seconds)
 health_timeout: 60
+
+# Override which service to expose (for docker-compose with multiple services)
+# Default: Automatically detects services with "web" in the name, or uses first service
+service_name: api
+
+# Services that should persist across deployments (not restarted)
+# Useful for databases, caches, and other stateful services
+# Default: Automatically detects common infrastructure (postgres, mysql, redis, mongodb, etc.)
+persistent_services:
+  - postgres
+  - redis
+  - custom-database
+```
+
+### Persistent Services
+
+By default, Mushak automatically detects and preserves common infrastructure services during redeployments:
+- **Databases**: postgres, mysql, mariadb, mongodb, timescale
+- **Caches**: redis, memcached
+- **Message Queues**: rabbitmq
+- **Search**: elasticsearch
+
+These services are:
+1. Started once on first deployment
+2. **Not restarted** on subsequent deployments (only application services restart)
+3. Kept running to avoid downtime and data loss
+
+**Manual Override:**
+
+If you have custom infrastructure or want specific services to persist, add them to `persistent_services`:
+
+```yaml
+persistent_services:
+  - postgres      # Will persist even if not auto-detected
+  - custom-cache  # Your custom service
+  - background-processor  # Any service you want to keep running
 ```
 
 ## Environment Variables

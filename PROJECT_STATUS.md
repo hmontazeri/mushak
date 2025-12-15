@@ -20,7 +20,7 @@ All planned features have been implemented successfully!
 - [x] Post-receive hook generation and installation
 - [x] Multi-app Caddy configuration
 - [x] Local Git remote configuration
-- [x] Configuration persistence (`.mushak/config.yaml`)
+- [x] Configuration persistence (`.mushak/mushak.yaml`)
 
 ### Phase 3: Deploy Command ✓
 - [x] `mushak deploy` command

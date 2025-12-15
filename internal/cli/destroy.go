@@ -50,7 +50,7 @@ func runDestroy(cmd *cobra.Command, args []string) error {
 	var cfg *config.DeployConfig
 	var err error
 
-	// Try to load config from .mushak/config.yaml
+	// Try to load config from .mushak/mushak.yaml
 	if destroyHost == "" || destroyUser == "" || destroyApp == "" {
 		cfg, err = config.LoadDeployConfig()
 		if err != nil {

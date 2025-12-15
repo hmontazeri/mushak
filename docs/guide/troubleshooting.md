@@ -61,6 +61,24 @@ Mushak is trying to expose `postgres` instead of your web service.
 2. First service defined in docker-compose.yml
 3. Override with `service_name` in mushak.yaml
 
+### Database restarting on every deploy
+
+By default, Mushak automatically detects infrastructure services (databases, caches) and keeps them running across deployments. Only application services are restarted.
+
+**Automatically detected infrastructure:**
+- postgres, mysql, mariadb, mongodb, timescale
+- redis, memcached
+- rabbitmq, elasticsearch
+
+**If your database still restarts:**
+1.  Check if it uses a recognized infrastructure image (e.g., `image: postgres:16`)
+2.  If using a custom image, add it to `mushak.yaml`:
+    ```yaml
+    persistent_services:
+      - my-database
+      - custom-cache
+    ```
+
 ## Runtime Issues
 
 ### 502 Bad Gateway
