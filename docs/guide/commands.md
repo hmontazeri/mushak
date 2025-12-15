@@ -35,7 +35,13 @@ Manage environment variables for your application.
 ### mushak env set
 
 Sets environment variables on the remote server and restarts the application.
-This command securely updates the `.env` file on the server and triggers a redeployment to ensure the new variables are applied.
+This command securely updates the environment file on the server and triggers a redeployment to ensure the new variables are applied.
+
+**Environment file priority:**
+- Mushak will first look for `.env.prod` on the server
+- If `.env.prod` doesn't exist, it will look for `.env`
+- If neither exists, it will create `.env.prod` by default
+- During deployment, the environment file is copied to each release directory
 
 ```bash
 mushak env set [KEY=VALUE]...
@@ -44,7 +50,7 @@ mushak env set [KEY=VALUE]...
 **Example:**
 
 ```bash
-mushak env set DB_HOST=db.example.com API_KEY=secret123
+mushak env set DB_HOST=db.example.com API_KEY=secret123 DATABASE_PASSWORD=mysecret
 ```
 
 ## mushak destroy

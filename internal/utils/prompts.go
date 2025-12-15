@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/manifoldco/promptui"
@@ -10,7 +9,7 @@ import (
 // ConfirmDanger prompts the user to confirm a dangerous action
 func ConfirmDanger(message, confirmText string) (bool, error) {
 	prompt := promptui.Prompt{
-		Label: fmt.Sprintf("%s\nType '%s' to confirm", message, confirmText),
+		Label: message,
 	}
 
 	result, err := prompt.Run()

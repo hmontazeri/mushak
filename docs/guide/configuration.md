@@ -22,11 +22,17 @@ health_timeout: 60
 
 ## Environment Variables
 
-You can manage environment variables using the `mushak env` commands.
-Variables are stored securely on the server in a `.env` file and injected into your application at runtime.
+You can manage environment variables using the `mushak env set` command.
+Variables are stored securely on the server and injected into your application at runtime.
+
+**Environment file priority:**
+- Mushak first looks for `.env.prod` on the server (`/var/www/{app}/.env.prod`)
+- Falls back to `.env` if `.env.prod` doesn't exist
+- Creates `.env.prod` by default if neither exists
+- During each deployment, the environment file is copied to the release directory
 
 For `Dockerfile` projects, variables are passed via `--env-file`.
-For `Docker Compose` projects, the `.env` file is placed in the deployment directory, so you can reference variables in your `docker-compose.yml` like `${MY_VAR}`.
+For `Docker Compose` projects, the environment file is placed in the deployment directory, so you can reference variables in your `docker-compose.yml` like `${MY_VAR}` or use `env_file: .env.prod`.
 
 ## Docker Configuration
 
@@ -38,4 +44,4 @@ If you have a `Dockerfile`, Mushak builds it as a standard image.
 ### Docker Compose Projects
 If you have a `docker-compose.yml`, Mushak treats it as a service stack.
 - **Do not** map ports to the host (e.g., `- "80:80"`). Mushak manages port mapping dynamically to avoid conflicts.
-- Mushak will look for the service named `web`, `app`, or the first service defined to route traffic to.
+- Mushak will automatically detect the web service by looking for services with "web" in the name (e.g., `web`, `webapp`, `web-server`). If no service with "web" is found, it uses the first service defined. You can override this with a `mushak.yaml` file by specifying `service_name: your-service`.
