@@ -30,6 +30,7 @@ When you run `mushak deploy`, the following sequence occurs:
     *   Caddy reloads and instantly points the domain to the new port. This atomic switch ensures zero downtime.
 9.  **Cleanup**:
     *   Mushak stops the old container(s) and removes old deployment directories (keeps last 3).
+    *   **IMPORTANT**: Docker volumes are NEVER removed. Mushak uses `docker compose down` without the `-v` flag, preserving all database data, uploads, and persistent storage.
 
 ## Directory Structure
 

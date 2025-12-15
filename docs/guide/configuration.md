@@ -45,6 +45,14 @@ These services are:
 2. **Not restarted** on subsequent deployments (only application services restart)
 3. Kept running to avoid downtime and data loss
 
+**Volume Persistence:**
+
+Docker volumes are **ALWAYS preserved** across all deployments, regardless of whether services are marked as persistent. Mushak never removes volumes when cleaning up old containers. This means:
+- Database data persists across deployments
+- Uploaded files remain intact
+- Any data in named volumes or bind mounts is safe
+- You can safely redeploy dozens of times without data loss
+
 **Manual Override:**
 
 If you have custom infrastructure or want specific services to persist, add them to `persistent_services`:

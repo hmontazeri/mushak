@@ -310,14 +310,18 @@ EOF
     echo "→ Cleaning up old containers..."
 
     # Stop and remove old containers (exclude current SHA)
+    # IMPORTANT: We use 'docker compose down' WITHOUT -v flag to preserve volumes
+    # This ensures database data and other persistent storage is NOT deleted
     if [ "$BUILD_METHOD" = "compose" ]; then
         # Find old compose projects for this app
         docker ps -a --format "{{.Names}}" | grep "^mushak-$APP_NAME-" | grep -v "$SHA" | while read container; do
             echo "  Stopping $container"
             # Extract project name from container name
             PROJECT=$(echo $container | sed 's/-[^-]*$//')
+            # Note: No -v flag = volumes are preserved
             docker compose -p $PROJECT down 2>/dev/null || true
         done
+        echo "  (Volumes preserved)"
     else
         # Find old containers for this app
         docker ps -a --format "{{.Names}}" | grep "^mushak-$APP_NAME-" | grep -v "$SHA" | while read container; do
