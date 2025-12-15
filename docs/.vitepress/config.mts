@@ -4,8 +4,10 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   title: "Mushak",
   description: "Mushak (Persian for Rocket) is a zero-config deployment tool for your own server.",
+  head: [['link', { rel: 'icon', href: '/logo-mushak.svg' }]],
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
+    logo: '/logo-mushak.svg',
     nav: [
       { text: 'Home', link: '/' },
       { text: 'Guide', link: '/guide/what-is-mushak' },

@@ -5,6 +5,9 @@ hero:
   name: "Mushak"
   text: "Deploy like a rocket"
   tagline: Zero-config, zero-downtime deployment for your own VPS or Home lab
+  image:
+    src: /logo-mushak.svg
+    alt: Mushak Logo
   actions:
     - theme: brand
       text: What is Mushak?
