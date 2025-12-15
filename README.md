@@ -194,18 +194,31 @@ Open an interactive shell in your application container.
 mushak exec
 ```
 
-### `mushak env set`
+### Environment Variable Management
 
-Securely set environment variables for your application.
+Mushak provides several commands to manage environment variables:
 
-Mushak manages environment variables with the following priority:
+**Priority system:**
 1. First checks for `.env.prod` on the server
 2. Falls back to `.env` if `.env.prod` doesn't exist
 3. Creates `.env.prod` by default if neither exists
 4. During deployment, copies the environment file to each release
 
+**Commands:**
+
 ```bash
+# Set individual variables and redeploy
 mushak env set DATABASE_PASSWORD=secret RAILS_MASTER_KEY=abc123
+
+# Upload entire .env file
+mushak env push              # Auto-detects .env.prod, .env.production, or .env
+mushak env push .env.prod    # Upload specific file
+
+# Download from server
+mushak env pull              # Downloads to local .env.prod
+
+# Compare local vs server
+mushak env diff              # Shows differences
 ```
 
 
@@ -229,24 +242,139 @@ internal_port: 3000
 health_path: /health
 ```
 
-### Python App with Docker Compose
+### Multi-Service App with Docker Compose
+
+This example shows a complete setup with web server, background worker, and database using environment variables.
 
 ```yaml
 # docker-compose.yml
-version: '3'
 services:
+  postgres:
+    image: postgres:16
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${DATABASE_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: myapp_production
+    # Don't expose ports externally - services communicate internally
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   web:
     build: .
-    # Don't specify ports here - mushak handles this
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env.prod
     environment:
-      - DATABASE_URL=postgresql://...
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      RAILS_ENV: production
+    # Don't specify ports - Mushak handles this dynamically
+    volumes:
+      - app_storage:/app/storage
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  worker:
+    build: .
+    command: bundle exec sidekiq
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env.prod
+    environment:
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      RAILS_ENV: production
+    volumes:
+      - app_storage:/app/storage
+
+volumes:
+  postgres_data:
+  app_storage:
 ```
 
 ```yaml
 # mushak.yaml
-internal_port: 8000
-health_path: /api/health
+internal_port: 3000
+health_path: /health
+health_timeout: 60
 ```
+
+```bash
+# .env.prod (gitignored)
+DATABASE_PASSWORD=your-secure-password
+DATABASE_USERNAME=postgres
+RAILS_MASTER_KEY=your-master-key
+SECRET_KEY_BASE=your-secret-key
+```
+
+**How Mushak handles this setup:**
+
+1. **Service Detection**: Mushak automatically detects the `web` service (ignores `postgres` and `worker`)
+2. **Port Mapping**: Creates a dynamic port mapping (e.g., 8000:3000) only for the `web` service
+3. **Environment Files**:
+   - During `mushak init`, prompts to upload your local `.env.prod`
+   - During deployment, copies `/var/www/myapp/.env.prod` to each release directory
+   - All services can access the variables via `env_file: .env.prod`
+4. **Service Startup Order**:
+   - `postgres` starts first, waits for health check
+   - `web` and `worker` start after postgres is healthy
+   - Only `web` is exposed via Caddy reverse proxy
+5. **Internal Communication**: Services communicate via internal Docker network (no exposed ports needed)
+
+**Deployment flow:**
+
+```bash
+# Initialize (auto-uploads .env.prod if exists)
+mushak init --host 1.2.3.4 --user root --domain myapp.com --app myapp
+# ✓ Found local .env.prod with 4 variables (DATABASE_PASSWORD, RAILS_MASTER_KEY, +2 more)
+# → Upload to server? [Y/n]: y
+# ✓ Uploaded .env.prod to server
+
+# Deploy
+mushak deploy
+# → Environment file: .env.prod ✓
+# → Detecting build method...
+#   Service name: web (detected web service)
+# → Building and starting containers...
+#   postgres: healthy ✓
+#   web: healthy ✓
+#   worker: running ✓
+```
+
+**Managing environment variables:**
+
+```bash
+# Update variables and redeploy
+mushak env set DATABASE_PASSWORD=new-password
+
+# Upload entire .env.prod file
+mushak env push
+
+# Download from server (for team sync)
+mushak env pull
+
+# Compare local vs server
+mushak env diff
+```
+
+**Important notes:**
+
+- **No port conflicts**: Don't specify `ports:` in your docker-compose.yml for the web service. Mushak dynamically assigns ports (8000-9000 range) to avoid conflicts between deployments.
+- **Service naming**: Services with "web" in the name are automatically detected. If you use a different name, create a `mushak.yaml` with `service_name: your-service`.
+- **Database persistence**: Volumes persist across deployments. Database data is not lost during redeployments.
+- **Zero-downtime**: Old containers keep running until new ones pass health checks, then Mushak switches traffic and cleans up old containers.
 
 ## Multi-App Deployment
 

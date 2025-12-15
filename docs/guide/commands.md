@@ -53,6 +53,56 @@ mushak env set [KEY=VALUE]...
 mushak env set DB_HOST=db.example.com API_KEY=secret123 DATABASE_PASSWORD=mysecret
 ```
 
+### mushak env push
+
+Uploads your local environment file to the server. Auto-detects `.env.prod`, `.env.production`, or `.env` in that order, or you can specify a file explicitly.
+
+```bash
+mushak env push [file]
+```
+
+**Examples:**
+
+```bash
+# Auto-detect and upload
+mushak env push
+
+# Upload specific file
+mushak env push .env.production
+```
+
+### mushak env pull
+
+Downloads the environment file from the server to your local `.env.prod` file. Useful for syncing environment variables across team members.
+
+```bash
+mushak env pull
+```
+
+**Example:**
+
+```bash
+mushak env pull
+```
+
+### mushak env diff
+
+Compares your local and server environment files, showing which variables exist only locally, only on the server, or have different values.
+
+```bash
+mushak env diff
+```
+
+**Example:**
+
+```bash
+mushak env diff
+# Output:
+# + NEW_VAR (only in local)
+# - OLD_VAR (only on server)
+# ≠ API_KEY (values differ)
+```
+
 ## mushak destroy
 
 Completely removes an application from the server. **Destructive action.**

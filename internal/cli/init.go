@@ -10,6 +10,7 @@ import (
 	"github.com/hmontazeri/mushak/internal/hooks"
 	"github.com/hmontazeri/mushak/internal/server"
 	"github.com/hmontazeri/mushak/internal/ssh"
+	"github.com/hmontazeri/mushak/internal/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -131,6 +132,12 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to create Caddy config: %w", err)
 	}
 	fmt.Println("✓ Caddy configuration created")
+	fmt.Println()
+
+	// Check for local env file and prompt to upload
+	if envFile, err := detectAndUploadEnvFile(executor, initApp); err == nil && envFile != "" {
+		fmt.Printf("✓ Uploaded %s to server\n", envFile)
+	}
 
 	// Add Git remote
 	remoteName := "mushak"
@@ -188,4 +195,81 @@ func runInit(cmd *cobra.Command, args []string) error {
 func isGitRepo() bool {
 	cmd := exec.Command("git", "rev-parse", "--git-dir")
 	return cmd.Run() == nil
+}
+
+// detectAndUploadEnvFile detects local env file and prompts user to upload
+func detectAndUploadEnvFile(executor *ssh.Executor, appName string) (string, error) {
+	envFile, err := detectLocalEnvFileWithFallback()
+	if err != nil {
+		// No local env file found, skip silently
+		return "", nil
+	}
+
+	// Count variables
+	count, err := countEnvVars(envFile)
+	if err != nil || count == 0 {
+		return "", nil
+	}
+
+	// Get first few variable names for display
+	keys, _ := getEnvVarKeys(envFile)
+	preview := ""
+	if len(keys) > 0 {
+		displayKeys := keys
+		if len(keys) > 3 {
+			displayKeys = keys[:3]
+		}
+		preview = fmt.Sprintf(" (%s", displayKeys[0])
+		for i := 1; i < len(displayKeys); i++ {
+			preview += ", " + displayKeys[i]
+		}
+		if len(keys) > 3 {
+			preview += fmt.Sprintf(", +%d more", len(keys)-3)
+		}
+		preview += ")"
+	}
+
+	fmt.Printf("✓ Found local %s with %d variable%s%s\n", envFile, count, pluralize(count), preview)
+
+	// Prompt user
+	confirmed, err := confirmEnvUpload()
+	if err != nil || !confirmed {
+		fmt.Println("  Skipped environment file upload")
+		return "", nil
+	}
+
+	// Read and upload
+	content, err := os.ReadFile(envFile)
+	if err != nil {
+		return "", fmt.Errorf("failed to read %s: %w", envFile, err)
+	}
+
+	// Determine target path (use .env.prod if source is .env.prod, otherwise .env)
+	targetFile := ".env.prod"
+	if envFile == ".env" {
+		targetFile = ".env"
+	}
+
+	targetPath := fmt.Sprintf("/var/www/%s/%s", appName, targetFile)
+	if err := executor.WriteFileSudo(targetPath, string(content)); err != nil {
+		return "", fmt.Errorf("failed to upload environment file: %w", err)
+	}
+
+	return envFile, nil
+}
+
+func detectLocalEnvFileWithFallback() (string, error) {
+	return utils.DetectLocalEnvFile()
+}
+
+func countEnvVars(path string) (int, error) {
+	return utils.CountEnvVars(path)
+}
+
+func getEnvVarKeys(path string) ([]string, error) {
+	return utils.GetEnvVarKeys(path)
+}
+
+func confirmEnvUpload() (bool, error) {
+	return utils.Confirm("→ Upload to server?")
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/hmontazeri/mushak/internal/hooks"
 	"github.com/hmontazeri/mushak/internal/server"
 	"github.com/hmontazeri/mushak/internal/ssh"
+	"github.com/hmontazeri/mushak/internal/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -31,9 +32,44 @@ Example:
 	RunE: runEnvSet,
 }
 
+var envPushCmd = &cobra.Command{
+	Use:   "push [file]",
+	Short: "Upload local environment file to server",
+	Long: `Upload a local .env file to the server.
+If no file is specified, automatically detects and uses .env.prod, .env.production, or .env.
+
+Example:
+  mushak env push                    # Auto-detect and upload
+  mushak env push .env.production    # Upload specific file`,
+	RunE: runEnvPush,
+}
+
+var envPullCmd = &cobra.Command{
+	Use:   "pull",
+	Short: "Download environment file from server",
+	Long: `Download the environment file from the server to local .env.prod.
+
+Example:
+  mushak env pull`,
+	RunE: runEnvPull,
+}
+
+var envDiffCmd = &cobra.Command{
+	Use:   "diff",
+	Short: "Compare local and server environment files",
+	Long: `Show differences between local and server environment files.
+
+Example:
+  mushak env diff`,
+	RunE: runEnvDiff,
+}
+
 func init() {
 	rootCmd.AddCommand(envCmd)
 	envCmd.AddCommand(envSetCmd)
+	envCmd.AddCommand(envPushCmd)
+	envCmd.AddCommand(envPullCmd)
+	envCmd.AddCommand(envDiffCmd)
 }
 
 func runEnvSet(cmd *cobra.Command, args []string) error {
@@ -206,6 +242,259 @@ func updateEnvFile(content string, updates map[string]string) string {
 	if result != "" {
 		result += "\n"
 	}
-	
+
 	return result
+}
+
+func runEnvPush(cmd *cobra.Command, args []string) error {
+	// Determine which file to upload
+	var envFile string
+	var err error
+
+	if len(args) > 0 {
+		// User specified a file
+		envFile = args[0]
+		if _, err := os.Stat(envFile); err != nil {
+			return fmt.Errorf("file not found: %s", envFile)
+		}
+	} else {
+		// Auto-detect
+		envFile, err = utils.DetectLocalEnvFile()
+		if err != nil {
+			return fmt.Errorf("no environment file found. Tried: .env.prod, .env.production, .env")
+		}
+	}
+
+	// Load config
+	cfg, err := config.LoadDeployConfig()
+	if err != nil {
+		return fmt.Errorf("failed to load config: %w\nHave you run 'mushak init'?", err)
+	}
+
+	fmt.Println("\n=== Mushak Env Push ===")
+	fmt.Printf("Server: %s@%s\n", cfg.User, cfg.Host)
+	fmt.Printf("App: %s\n", cfg.AppName)
+	fmt.Printf("Local file: %s\n", envFile)
+	fmt.Println()
+
+	// Read file
+	content, err := os.ReadFile(envFile)
+	if err != nil {
+		return fmt.Errorf("failed to read %s: %w", envFile, err)
+	}
+
+	// Show preview
+	count, _ := utils.CountEnvVars(envFile)
+	fmt.Printf("→ Uploading %d variable%s...\n", count, pluralizeEnv(count))
+
+	// Connect SSH
+	client, err := ssh.NewClient(ssh.Config{
+		Host: cfg.Host,
+		User: cfg.User,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create SSH client: %w", err)
+	}
+
+	if err := client.Connect(); err != nil {
+		return fmt.Errorf("failed to connect to server: %w", err)
+	}
+	defer client.Close()
+
+	executor := ssh.NewExecutor(client)
+
+	// Determine target path
+	targetFile := ".env.prod"
+	if strings.Contains(envFile, ".env.production") {
+		targetFile = ".env.prod"
+	} else if envFile == ".env" {
+		targetFile = ".env"
+	}
+
+	targetPath := fmt.Sprintf("/var/www/%s/%s", cfg.AppName, targetFile)
+	if err := executor.WriteFileSudo(targetPath, string(content)); err != nil {
+		return fmt.Errorf("failed to upload: %w", err)
+	}
+
+	fmt.Println("✓ Environment file uploaded")
+	fmt.Printf("  Target: %s\n", targetPath)
+	fmt.Println()
+	fmt.Println("Run 'mushak deploy' to apply changes")
+
+	return nil
+}
+
+func runEnvPull(cmd *cobra.Command, args []string) error {
+	// Load config
+	cfg, err := config.LoadDeployConfig()
+	if err != nil {
+		return fmt.Errorf("failed to load config: %w\nHave you run 'mushak init'?", err)
+	}
+
+	fmt.Println("\n=== Mushak Env Pull ===")
+	fmt.Printf("Server: %s@%s\n", cfg.User, cfg.Host)
+	fmt.Printf("App: %s\n", cfg.AppName)
+	fmt.Println()
+
+	// Connect SSH
+	client, err := ssh.NewClient(ssh.Config{
+		Host: cfg.Host,
+		User: cfg.User,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create SSH client: %w", err)
+	}
+
+	if err := client.Connect(); err != nil {
+		return fmt.Errorf("failed to connect to server: %w", err)
+	}
+	defer client.Close()
+
+	executor := ssh.NewExecutor(client)
+
+	// Try .env.prod first, then .env
+	envProdPath := fmt.Sprintf("/var/www/%s/.env.prod", cfg.AppName)
+	envPath := fmt.Sprintf("/var/www/%s/.env", cfg.AppName)
+
+	var content string
+	var sourcePath string
+
+	if out, err := executor.Run(fmt.Sprintf("cat %s", envProdPath)); err == nil {
+		content = out
+		sourcePath = envProdPath
+	} else if out, err := executor.Run(fmt.Sprintf("cat %s", envPath)); err == nil {
+		content = out
+		sourcePath = envPath
+	} else {
+		return fmt.Errorf("no environment file found on server")
+	}
+
+	fmt.Printf("→ Downloading from %s...\n", sourcePath)
+
+	// Write to local .env.prod
+	localPath := ".env.prod"
+	if err := os.WriteFile(localPath, []byte(content), 0600); err != nil {
+		return fmt.Errorf("failed to write %s: %w", localPath, err)
+	}
+
+	count, _ := utils.CountEnvVars(localPath)
+	fmt.Printf("✓ Downloaded %d variable%s to %s\n", count, pluralizeEnv(count), localPath)
+
+	return nil
+}
+
+func runEnvDiff(cmd *cobra.Command, args []string) error {
+	// Detect local env file
+	localFile, err := utils.DetectLocalEnvFile()
+	if err != nil {
+		return fmt.Errorf("no local environment file found")
+	}
+
+	// Load config
+	cfg, err := config.LoadDeployConfig()
+	if err != nil {
+		return fmt.Errorf("failed to load config: %w\nHave you run 'mushak init'?", err)
+	}
+
+	fmt.Println("\n=== Mushak Env Diff ===")
+	fmt.Printf("Local: %s\n", localFile)
+	fmt.Printf("Server: %s@%s (%s)\n", cfg.User, cfg.Host, cfg.AppName)
+	fmt.Println()
+
+	// Read local
+	localVars, err := utils.ParseEnvFile(localFile)
+	if err != nil {
+		return fmt.Errorf("failed to parse local file: %w", err)
+	}
+
+	// Connect and read remote
+	client, err := ssh.NewClient(ssh.Config{
+		Host: cfg.Host,
+		User: cfg.User,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create SSH client: %w", err)
+	}
+
+	if err := client.Connect(); err != nil {
+		return fmt.Errorf("failed to connect to server: %w", err)
+	}
+	defer client.Close()
+
+	executor := ssh.NewExecutor(client)
+
+	// Try .env.prod first, then .env
+	envProdPath := fmt.Sprintf("/var/www/%s/.env.prod", cfg.AppName)
+	envPath := fmt.Sprintf("/var/www/%s/.env", cfg.AppName)
+
+	var remoteContent string
+	if out, err := executor.Run(fmt.Sprintf("cat %s", envProdPath)); err == nil {
+		remoteContent = out
+	} else if out, err := executor.Run(fmt.Sprintf("cat %s", envPath)); err == nil {
+		remoteContent = out
+	} else {
+		return fmt.Errorf("no environment file found on server")
+	}
+
+	// Parse remote
+	remoteVars := make(map[string]string)
+	for _, line := range strings.Split(remoteContent, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) == 2 {
+			remoteVars[parts[0]] = parts[1]
+		}
+	}
+
+	// Compare
+	allKeys := make(map[string]bool)
+	for k := range localVars {
+		allKeys[k] = true
+	}
+	for k := range remoteVars {
+		allKeys[k] = true
+	}
+
+	keys := make([]string, 0, len(allKeys))
+	for k := range allKeys {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	hasChanges := false
+	for _, key := range keys {
+		localVal, localExists := localVars[key]
+		remoteVal, remoteExists := remoteVars[key]
+
+		if !remoteExists {
+			fmt.Printf("+ %s (only in local)\n", key)
+			hasChanges = true
+		} else if !localExists {
+			fmt.Printf("- %s (only on server)\n", key)
+			hasChanges = true
+		} else if localVal != remoteVal {
+			fmt.Printf("≠ %s (values differ)\n", key)
+			hasChanges = true
+		}
+	}
+
+	if !hasChanges {
+		fmt.Println("✓ No differences found")
+	} else {
+		fmt.Println()
+		fmt.Println("Use 'mushak env push' to upload local changes")
+		fmt.Println("Use 'mushak env pull' to download server version")
+	}
+
+	return nil
+}
+
+func pluralizeEnv(count int) string {
+	if count == 1 {
+		return ""
+	}
+	return "s"
 }
