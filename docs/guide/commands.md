@@ -92,3 +92,48 @@ PORT=8080
 
 **Flags:**
 - `--key`: Path to SSH key (default `~/.ssh/id_rsa`).
+
+## mushak update
+
+Update mushak to the latest version. Checks for the latest release on GitHub and updates the binary if a newer version is available.
+
+```bash
+mushak update [flags]
+```
+
+**Flags:**
+- `--check`: Check for updates without installing
+
+## mushak version
+
+Print the version number of the installed mushak CLI.
+
+```bash
+mushak version
+```
+
+## mushak completion
+
+Generate the autocompletion script for the specified shell.
+
+```bash
+mushak completion [bash|zsh|fish|powershell]
+```
+
+### Bash
+
+```bash
+source <(mushak completion bash)
+```
+
+### Zsh
+
+```bash
+source <(mushak completion zsh)
+```
+
+### Fish
+
+```bash
+mushak completion fish | source
+```
