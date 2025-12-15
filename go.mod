@@ -3,15 +3,16 @@ module github.com/hmontazeri/mushak
 go 1.25.5
 
 require (
+	github.com/blang/semver v3.5.1+incompatible
 	github.com/manifoldco/promptui v0.9.0
 	github.com/rhysd/go-github-selfupdate v1.2.3
 	github.com/spf13/cobra v1.10.2
 	golang.org/x/crypto v0.46.0
+	golang.org/x/term v0.38.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
-	github.com/blang/semver v3.5.1+incompatible // indirect
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
 	github.com/golang/protobuf v1.3.2 // indirect
 	github.com/google/go-github/v30 v30.1.0 // indirect
