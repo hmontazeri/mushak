@@ -103,3 +103,35 @@ mushak env diff
 3. Creates `.env.prod` by default if neither exists
 
 During deployment, Mushak copies the environment file to each release directory, making it available to all services in docker-compose.
+
+## Data Persistence
+
+### Volumes Are Always Preserved
+
+**IMPORTANT**: Mushak **NEVER** removes Docker volumes. Your data is safe across all deployments.
+
+When cleaning up old containers, Mushak uses `docker compose down` **without** the `-v` or `--volumes` flag. This means:
+
+✅ **Database data persists** - Your postgres, mysql, mongodb data is never deleted
+✅ **Uploaded files remain** - User uploads and storage volumes are safe
+✅ **Named volumes survive** - Any volumes defined in docker-compose.yml persist
+✅ **Bind mounts are safe** - Host-mounted directories remain intact
+
+**Example:**
+```yaml
+volumes:
+  postgres_data:      # Persists across deployments ✓
+  user_uploads:       # Persists across deployments ✓
+  app_cache:          # Persists across deployments ✓
+```
+
+You can redeploy 100 times - your data stays safe.
+
+### Persistent Services
+
+Infrastructure services (databases, caches) are also **not restarted** during redeployments, providing:
+- Zero downtime for databases
+- No connection drops
+- Continuous data availability
+
+See [Configuration - Persistent Services](/guide/configuration#persistent-services) for details.
