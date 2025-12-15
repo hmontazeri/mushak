@@ -59,3 +59,47 @@ Or you can use the `--branch` flag during deploy to deploy a specific local bran
 ```bash
 mushak deploy --branch my-feature-branch
 ```
+
+## Environment Variables
+
+Mushak manages environment variables separately from your code (they're not committed to git).
+
+### Uploading Environment Files
+
+If you have a `.env.prod` file locally:
+
+```bash
+# Auto-upload during init (you'll be prompted)
+mushak init ...
+
+# Auto-upload during deploy (if missing on server)
+mushak deploy
+
+# Manually upload
+mushak env push              # Auto-detects .env.prod, .env.production, or .env
+mushak env push .env.prod    # Upload specific file
+```
+
+### Setting Individual Variables
+
+```bash
+# Set variables and trigger redeployment
+mushak env set DATABASE_PASSWORD=secret API_KEY=abc123
+```
+
+### Syncing with Team
+
+```bash
+# Download environment file from server
+mushak env pull
+
+# Compare local vs server
+mushak env diff
+```
+
+**Environment file priority:**
+1. `.env.prod` on server
+2. `.env` on server (fallback)
+3. Creates `.env.prod` by default if neither exists
+
+During deployment, Mushak copies the environment file to each release directory, making it available to all services in docker-compose.
