@@ -373,6 +373,7 @@ mushak env diff
 
 - **No port conflicts**: Don't specify `ports:` in your docker-compose.yml for the web service. Mushak dynamically assigns ports (8000-9000 range) to avoid conflicts between deployments.
 - **Service naming**: Services with "web" in the name are automatically detected. If you use a different name, create a `mushak.yaml` with `service_name: your-service`.
+- **Container naming**: Avoid setting `container_name:` in docker-compose.yml. Let Mushak manage naming for proper isolation between deployments. If you must use custom names, `mushak logs` and `mushak shell` will still work.
 - **Database persistence**: Volumes persist across deployments. Database data is not lost during redeployments.
 - **Zero-downtime**: Old containers keep running until new ones pass health checks, then Mushak switches traffic and cleans up old containers.
 

@@ -55,13 +55,24 @@ func runShell(cmd *cobra.Command, args []string) error {
 	executor := ssh.NewExecutor(client)
 
 	// Find the running container for this app
-	findCmd := fmt.Sprintf("docker ps --filter 'name=mushak-%s-' --format '{{.ID}}' | head -n 1", cfg.AppName)
-	containerID, err := executor.Run(findCmd)
-	if err != nil {
-		return fmt.Errorf("failed to find running container: %w", err)
+	// Try multiple patterns to handle different naming conventions
+	patterns := []string{
+		fmt.Sprintf("mushak-%s-.*-web", cfg.AppName),  // Mushak naming with web service
+		fmt.Sprintf("mushak-%s-", cfg.AppName),         // Any Mushak container for this app
+		fmt.Sprintf("%s[_-]web", cfg.AppName),          // Custom container_name with web
+		fmt.Sprintf("%s[_-]", cfg.AppName),             // Any custom container_name
 	}
 
-	containerID = strings.TrimSpace(containerID)
+	var containerID string
+	for _, pattern := range patterns {
+		findCmd := fmt.Sprintf("docker ps --filter 'name=%s' --format '{{.ID}}' | head -n 1", pattern)
+		result, err := executor.Run(findCmd)
+		if err == nil && strings.TrimSpace(result) != "" {
+			containerID = strings.TrimSpace(result)
+			break
+		}
+	}
+
 	if containerID == "" {
 		return fmt.Errorf("no running container found for app '%s'", cfg.AppName)
 	}
