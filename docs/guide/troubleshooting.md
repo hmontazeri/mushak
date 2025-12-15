@@ -17,11 +17,49 @@ This is the most common error. It means your app container started, but Mushak c
     docker logs <container_id>
     ```
 
-### "Connection refused" on Git Push
+### "Connection refused" or "ssh: unable to authenticate"
 This usually means SSH authentication failed.
 
+**Common causes:**
+1.  **No SSH key in agent**: Mushak tries SSH agent first. Add your key: `ssh-add ~/.ssh/id_ed25519` (or `id_rsa`)
+2.  **Wrong key path**: Specify explicitly: `mushak init --key ~/.ssh/id_ed25519`
+3.  **Key not on server**: Ensure your public key is in `~/.ssh/authorized_keys` on the server
+4.  **Test SSH directly**: `ssh user@server` - if this works, Mushak should work too
+
+**Priority of SSH keys:**
+1. SSH agent (if available)
+2. Key specified via `--key` flag
+3. Default: `~/.ssh/id_rsa`
+
+### "env file not found" or missing environment variables
+Your docker-compose.yml references `.env.prod` but deployment fails.
+
 **Fix:**
-Ensure your SSH key is added to the local agent (`ssh-add`) and the public key is in `~/.ssh/authorized_keys` on the server.
+1.  **Upload environment file**: `mushak env push` (auto-detects `.env.prod` or `.env`)
+2.  **Set individual variables**: `mushak env set DATABASE_PASSWORD=secret`
+3.  **During init**: Mushak will prompt to upload if it detects a local env file
+4.  **During deploy**: Mushak will prompt to upload if server has no env file
+
+**Priority of environment files:**
+1. `.env.prod` on server (`/var/www/<app>/.env.prod`)
+2. `.env` on server (`/var/www/<app>/.env`)
+3. Not found - deployment may fail if docker-compose requires it
+
+### Wrong service detected for docker-compose
+Mushak is trying to expose `postgres` instead of your web service.
+
+**Fix:**
+1.  **Rename service**: Include "web" in the name (e.g., `web`, `webapp`, `web-server`)
+2.  **Use mushak.yaml**: Create a `mushak.yaml` file with:
+    ```yaml
+    service_name: your-service-name
+    internal_port: 3000
+    ```
+
+**Service detection priority:**
+1. Services with "web" in the name
+2. First service defined in docker-compose.yml
+3. Override with `service_name` in mushak.yaml
 
 ## Runtime Issues
 
@@ -37,8 +75,22 @@ sudo journalctl -u caddy -f
 
 ## Debugging Tips
 
-You can effectively debug by "logging in" to your deployed environment.
+Mushak provides several commands to debug your deployment:
 
-1.  SSH into your server.
-2.  Run `docker ps` to see running containers.
-3.  Run `docker exec -it <container_name> /bin/sh` to get a shell inside your running app.
+### View logs
+```bash
+mushak logs              # View container logs
+mushak logs -f           # Follow logs in real-time
+mushak logs -n 500       # Show last 500 lines
+```
+
+### Access container shell
+```bash
+mushak shell             # Opens interactive shell in your app container
+```
+
+### Manual debugging on server
+1.  SSH into your server: `ssh user@server`
+2.  Run `docker ps` to see running containers
+3.  Run `docker exec -it <container_name> /bin/sh` to get a shell inside your running app
+4.  Check environment: `cat /var/www/<app>/.env.prod`

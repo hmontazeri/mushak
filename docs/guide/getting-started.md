@@ -42,30 +42,57 @@ sudo mv mushak /usr/local/bin/
 
 ## First Deployment
 
-### 1. Initialize
+### 1. SSH Setup (Optional)
+
+If you're using a non-default SSH key (not `~/.ssh/id_rsa`), add it to your SSH agent:
+
+```bash
+# Add your SSH key
+ssh-add ~/.ssh/id_ed25519
+
+# Verify it's added
+ssh-add -l
+```
+
+Or specify the key explicitly with the `--key` flag when running `mushak init`.
+
+### 2. Initialize
 Go to your project directory (which must contain a `Dockerfile` or `docker-compose.yml`).
 
 ```bash
 mushak init \
   --host your-server-ip \
-  --user user \
+  --user root \
   --domain myapp.com \
   --app my-app-name
 ```
 
 This command will:
-- SSH into your server.
-- Install Docker, Git, and Caddy automatically.
-- set up the remote git repository.
+- SSH into your server
+- Install Docker, Git, and Caddy automatically
+- Set up the remote git repository
+- **Detect and upload `.env.prod` if it exists** (you'll be prompted)
 
-### 2. Deploy
+If you have a `.env.prod` file, Mushak will detect it and ask if you want to upload it to the server:
+
+```bash
+✓ Found local .env.prod with 5 variables (DATABASE_PASSWORD, API_KEY, +3 more)
+→ Upload to server? [Y/n]:
+```
+
+### 3. Deploy
 Now, simply run:
 
 ```bash
 mushak deploy
 ```
 
-Watch as your "Rocket" lifts off! Mushak will push your code, build it on the server, and deploy it.
+Watch as your deployment happens! Mushak will:
+- Check for environment files (prompt to upload if missing)
+- Push your code
+- Build containers on the server
+- Run health checks
+- Switch traffic with zero downtime
 
 ### 3. Verify
 Visit `https://myapp.com`. Your site should be live with a secure HTTPS certificate provisioned automatically by Caddy.
