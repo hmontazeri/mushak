@@ -1,4 +1,4 @@
-# Mushak
+# <img src="docs/public/logo-mushak.svg" width="150" align="center" /> Mushak
 
 **Zero-Config, Zero-Downtime deployments to your Linux server**
 

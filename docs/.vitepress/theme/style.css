@@ -11,3 +11,7 @@
   --vp-c-brand-2: #90e0ef;
   --vp-c-brand-3: #ade8f4;
 }
+
+.VPNavBarTitle .logo {
+  height: 40px;
+}
