@@ -321,7 +321,7 @@ SECRET_KEY_BASE=your-secret-key
 
 **How Mushak handles this setup:**
 
-1. **Service Detection**: Mushak automatically detects the `web` service (ignores `postgres` and `worker`)
+1. **Service Detection**: Mushak automatically detects the `web` service for routing (ignores `postgres` and `worker`)
 2. **Port Mapping**: Creates a dynamic port mapping (e.g., 8000:3000) only for the `web` service
 3. **Environment Files**:
    - During `mushak init`, prompts to upload your local `.env.prod`
@@ -332,6 +332,10 @@ SECRET_KEY_BASE=your-secret-key
    - `web` and `worker` start after postgres is healthy
    - Only `web` is exposed via Caddy reverse proxy
 5. **Internal Communication**: Services communicate via internal Docker network (no exposed ports needed)
+6. **Smart Redeployments**:
+   - **Infrastructure services** (`postgres`) are automatically detected and kept running
+   - **Application services** (`web`, `worker`) are rebuilt and restarted
+   - Database stays up, no connection drops, no data loss
 
 **Deployment flow:**
 
@@ -342,15 +346,28 @@ mushak init --host 1.2.3.4 --user root --domain myapp.com --app myapp
 # → Upload to server? [Y/n]: y
 # ✓ Uploaded .env.prod to server
 
-# Deploy
+# First Deploy
 mushak deploy
 # → Environment file: .env.prod ✓
 # → Detecting build method...
 #   Service name: web (detected web service)
+#   Infrastructure services: postgres
+#   Application services: web worker
 # → Building and starting containers...
-#   postgres: healthy ✓
-#   web: healthy ✓
-#   worker: running ✓
+#   postgres: started ✓
+#   web: building... healthy ✓
+#   worker: building... running ✓
+
+# Second Deploy (after code changes)
+mushak deploy
+# → Environment file: .env.prod ✓
+#   Infrastructure services: postgres
+#   Application services: web worker
+# → Ensuring infrastructure services are running...
+#   postgres: already running ✓ (not restarted)
+# → Building and deploying application services...
+#   web: building... healthy ✓
+#   worker: building... running ✓
 ```
 
 **Managing environment variables:**

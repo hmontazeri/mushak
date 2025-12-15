@@ -153,12 +153,12 @@ func TestSaveDeployConfig(t *testing.T) {
 	}
 
 	// Check that config file was created
-	if _, err := os.Stat(".mushak/config.yaml"); os.IsNotExist(err) {
-		t.Error(".mushak/config.yaml was not created")
+	if _, err := os.Stat(".mushak/mushak.yaml"); os.IsNotExist(err) {
+		t.Error(".mushak/mushak.yaml was not created")
 	}
 
 	// Read and verify config
-	data, err := os.ReadFile(".mushak/config.yaml")
+	data, err := os.ReadFile(".mushak/mushak.yaml")
 	if err != nil {
 		t.Fatalf("Failed to read config file: %v", err)
 	}
@@ -212,7 +212,7 @@ branch: production
 remote_name: origin
 `
 
-	err := os.WriteFile(".mushak/config.yaml", []byte(configContent), 0644)
+	err := os.WriteFile(".mushak/mushak.yaml", []byte(configContent), 0644)
 	if err != nil {
 		t.Fatalf("Failed to create config file: %v", err)
 	}

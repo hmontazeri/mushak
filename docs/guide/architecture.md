@@ -13,12 +13,15 @@ When you run `mushak deploy`, the following sequence occurs:
     *   Mushak copies `.env.prod` (or `.env` as fallback) from `/var/www/<app>/.env.prod` to the deployment directory.
     *   All services in docker-compose can access these variables.
 5.  **Build**:
-    *   For `docker-compose.yml`: Detects the web service (services with "web" in the name), creates a port override, and runs `docker-compose build`.
+    *   For `docker-compose.yml`: Detects the web service (services with "web" in the name), creates a port override, and categorizes services.
+    *   Infrastructure services (databases, caches) are identified automatically by image name or via `persistent_services` in mushak.yaml.
     *   For `Dockerfile`: Runs `docker build`.
 6.  **Run**:
     *   It finds a free port between 8000 and 9000.
-    *   It spins up the container(s), mapping the internal port (e.g., 3000) to this random host port.
-    *   For docker-compose, all services start (web, workers, databases), but only the web service is port-mapped.
+    *   **Infrastructure services** (postgres, redis, etc.) are ensured to be running but NOT restarted.
+    *   **Application services** (web, workers) are rebuilt and redeployed.
+    *   Only the web service gets the dynamic port mapping for external access.
+    *   This smart restart prevents database restarts and maintains connections.
 7.  **Health Check**:
     *   Mushak polls `http://localhost:<random_port>/<health_path>` repeatedly.
     *   It waits up to `health_timeout` seconds (default: 30s).

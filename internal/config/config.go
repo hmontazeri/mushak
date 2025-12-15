@@ -9,9 +9,11 @@ import (
 
 // AppConfig represents the mushak.yaml configuration
 type AppConfig struct {
-	InternalPort  int    `yaml:"internal_port"`
-	HealthPath    string `yaml:"health_path"`
-	HealthTimeout int    `yaml:"health_timeout"`
+	InternalPort        int      `yaml:"internal_port"`
+	HealthPath          string   `yaml:"health_path"`
+	HealthTimeout       int      `yaml:"health_timeout"`
+	ServiceName         string   `yaml:"service_name"`
+	PersistentServices  []string `yaml:"persistent_services"`
 }
 
 // DefaultConfig returns the default configuration
@@ -45,7 +47,7 @@ func LoadConfig(path string) (*AppConfig, error) {
 }
 
 // DeployConfig represents local deployment configuration
-// Stored in .mushak/config.yaml
+// Stored in .mushak/mushak.yaml
 type DeployConfig struct {
 	AppName    string `yaml:"app_name"`
 	Host       string `yaml:"host"`
@@ -67,16 +69,16 @@ func SaveDeployConfig(cfg *DeployConfig) error {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
 
-	if err := os.WriteFile(".mushak/config.yaml", data, 0644); err != nil {
+	if err := os.WriteFile(".mushak/mushak.yaml", data, 0644); err != nil {
 		return fmt.Errorf("failed to write config file: %w", err)
 	}
 
 	return nil
 }
 
-// LoadDeployConfig loads deployment configuration from .mushak/config.yaml
+// LoadDeployConfig loads deployment configuration from .mushak/mushak.yaml
 func LoadDeployConfig() (*DeployConfig, error) {
-	data, err := os.ReadFile(".mushak/config.yaml")
+	data, err := os.ReadFile(".mushak/mushak.yaml")
 	if err != nil {
 		return nil, fmt.Errorf("failed to read deploy config: %w", err)
 	}
