@@ -1,0 +1,13 @@
+:root {
+  /* Palette: ["03045e","023e8a","0077b6","0096c7","00b4d8","48cae4","90e0ef","ade8f4","caf0f8"] */
+  
+  --vp-c-brand-1: #0077b6;
+  --vp-c-brand-2: #023e8a;
+  --vp-c-brand-3: #03045e;
+}
+
+.dark {
+  --vp-c-brand-1: #48cae4;
+  --vp-c-brand-2: #90e0ef;
+  --vp-c-brand-3: #ade8f4;
+}
