@@ -6,7 +6,7 @@ Ready to launch your rocket? 🚀 Follow this guide to set up your first deploym
 
 Before installing Mushak, ensure you have:
 
-1.  **A Server**: A fresh Ubuntu 20.04 (or newer) VPS.
+1.  **A Server**: A fresh Linux VPS (Ubuntu strongly recommended).
     *   You need `root` or `sudo` access.
     *   SSH key authentication should be enabled.
 2.  **A Domain**: A domain name (e.g., `myapp.com`) with an A record pointing to your server's IP.

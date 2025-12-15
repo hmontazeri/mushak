@@ -1,6 +1,6 @@
 # What is Mushak?
 
-**Mushak** (Persian for "Rocket" 🚀) is a CLI tool designed to bring a PaaS-like deployment experience to your own Ubuntu VPS or Home lab. It allows you to deploy Docker-based applications with a simple `git push`, handling build triggers, health checks, and zero-downtime traffic switching automatically.
+**Mushak** (Persian for "Rocket" 🚀) is a CLI tool designed to bring a PaaS-like deployment experience to your own Linux VPS or Home lab. It allows you to deploy Docker-based applications with a simple `git push`, handling build triggers, health checks, and zero-downtime traffic switching automatically.
 
 ## Why Mushak?
 
@@ -30,4 +30,4 @@ If your project has a `Dockerfile` or `docker-compose.yml`, it should just work.
 Deployments should never break the site. Mushak spins up the new version alongside the old one, waits for it to be healthy, and only then switches the traffic. If the new version fails, the old one stays active.
 
 ### 3. Simplicity > Flexibility
-Mushak makes opinionated choices (Ubuntu, Caddy, Docker) to keep the tool simple and reliable. We prioritize "just working" over infinite configurability.
+Mushak makes opinionated choices (Linux, Caddy, Docker) to keep the tool simple and reliable. We prioritize "just working" over infinite configurability.
