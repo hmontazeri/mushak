@@ -20,6 +20,14 @@ health_path: /api/health
 health_timeout: 60
 ```
 
+## Environment Variables
+
+You can manage environment variables using the `mushak env` commands.
+Variables are stored securely on the server in a `.env` file and injected into your application at runtime.
+
+For `Dockerfile` projects, variables are passed via `--env-file`.
+For `Docker Compose` projects, the `.env` file is placed in the deployment directory, so you can reference variables in your `docker-compose.yml` like `${MY_VAR}`.
+
 ## Docker Configuration
 
 ### Dockerfile Projects

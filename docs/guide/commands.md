@@ -27,6 +27,25 @@ mushak deploy [flags]
 - `--force`, `-f`: Force push to the git remote. Useful if history diverged.
 - `--branch`: Deploy a specific local branch instead of the current one.
 
+## mushak env
+
+Manage environment variables for your application.
+
+### mushak env set
+
+Sets environment variables on the remote server and restarts the application.
+This command securely updates the `.env` file on the server and triggers a redeployment to ensure the new variables are applied.
+
+```bash
+mushak env set [KEY=VALUE]...
+```
+
+**Example:**
+
+```bash
+mushak env set DB_HOST=db.example.com API_KEY=secret123
+```
+
 ## mushak destroy
 
 Completely removes an application from the server. **Destructive action.**
