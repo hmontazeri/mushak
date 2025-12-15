@@ -1,0 +1,15 @@
+# Mushak Configuration Example
+# Place this file as mushak.yaml in your project root (optional)
+
+# Port your application listens on inside the container
+# Default: 80
+internal_port: 3000
+
+# Health check endpoint path
+# Mushak will poll this path to verify your app is running
+# Default: /
+health_path: /api/health
+
+# Maximum time (in seconds) to wait for health check to pass
+# Default: 30
+health_timeout: 60
