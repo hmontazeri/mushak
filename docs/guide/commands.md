@@ -39,9 +39,18 @@ mushak destroy [flags]
 - `--app`: Name of the app to destroy.
 - `--force`: Skip confirmation prompt.
 
-## mushak logs (Coming Soon)
+## mushak logs
 
 View real-time logs from your deployed application.
+
+```bash
+mushak logs [flags]
+```
+
+**Flags:**
+- `--tail`, `-n`: Number of lines to show (default "100").
+- `--follow`, `-f`: Follow log output (default true).
+- `--key`: Path to SSH key (default `~/.ssh/id_rsa`).
 
 ## mushak ssh (Coming Soon)
 
