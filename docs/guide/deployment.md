@@ -30,7 +30,8 @@ To deploy a second app:
 2.  Run init with a different app name and domain.
     ```bash
     mushak init \
-      --host user@your-server-ip \
+      --host your-server-ip \
+      --user user \
       --domain api.myapp.com \
       --app my-api
     ```

@@ -9,7 +9,8 @@ mushak init [flags]
 ```
 
 **Flags:**
-- `--host`: The SSH user and host (e.g., `root@1.2.3.4`). Required.
+- `--host`: The Server hostname or IP (e.g., `1.2.3.4`). Required.
+- `--user`: The SSH username (e.g., `root`). Required.
 - `--domain`: The domain name for this app (e.g., `example.com`). Required.
 - `--app`: The internal name for the app. Defaults to current directory name.
 - `--branch`: The git branch to track. Defaults to checked-out branch.
