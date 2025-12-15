@@ -119,3 +119,37 @@ func (e *Executor) WriteFileSudo(path, content string) error {
 	_, err := e.Run(cmd)
 	return err
 }
+
+// RunInteractive executes a command in an interactive session
+func (e *Executor) RunInteractive(cmd string, stdin io.Reader, stdout, stderr io.Writer) error {
+	session, err := e.client.client.NewSession()
+	if err != nil {
+		return fmt.Errorf("failed to create session: %w", err)
+	}
+	defer session.Close()
+
+	session.Stdin = stdin
+	session.Stdout = stdout
+	session.Stderr = stderr
+
+	// Request PTY
+	modes := ssh.TerminalModes{
+		ssh.ECHO:          1,     // enable echoing
+		ssh.TTY_OP_ISPEED: 14400, // input speed = 14.4kbaud
+		ssh.TTY_OP_OSPEED: 14400, // output speed = 14.4kbaud
+	}
+
+	if err := session.RequestPty("xterm", 40, 80, modes); err != nil {
+		return fmt.Errorf("request for pseudo terminal failed: %w", err)
+	}
+
+	if err := session.Run(cmd); err != nil {
+		if _, ok := err.(*ssh.ExitMissingError); ok {
+			// Usually session exits without return code if shell is terminated directly
+			return nil
+		}
+		return fmt.Errorf("command failed: %w", err)
+	}
+
+	return nil
+}

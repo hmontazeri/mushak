@@ -52,6 +52,24 @@ mushak logs [flags]
 - `--follow`, `-f`: Follow log output (default true).
 - `--key`: Path to SSH key (default `~/.ssh/id_rsa`).
 
-## mushak ssh (Coming Soon)
+## mushak shell
 
-Quickly SSH into the server or the running application container.
+Opens an interactive bash/shell session directly inside the running application container. This is useful for debugging issues, inspecting files, or checking environment variables in the production environment.
+
+```bash
+mushak shell [flags]
+```
+
+**Example:**
+
+```bash
+# Open a shell to the current app's container
+mushak shell
+
+# Verify environment variables inside the container
+root@1.2.3.4:/app# env | grep PORT
+PORT=8080
+```
+
+**Flags:**
+- `--key`: Path to SSH key (default `~/.ssh/id_rsa`).
