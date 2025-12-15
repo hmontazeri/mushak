@@ -47,7 +47,8 @@ Go to your project directory (which must contain a `Dockerfile` or `docker-compo
 
 ```bash
 mushak init \
-  --host user@your-server-ip \
+  --host your-server-ip \
+  --user user \
   --domain myapp.com \
   --app my-app-name
 ```

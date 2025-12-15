@@ -113,8 +113,8 @@ while read oldrev newrev refname; do
         COMPOSE_FILE="docker-compose.yml"
         [ -f "docker-compose.yaml" ] && COMPOSE_FILE="docker-compose.yaml"
 
-        # Get the first service name
-        SERVICE_NAME=$(grep -E "^[a-zA-Z0-9_-]+:" $COMPOSE_FILE | head -1 | sed 's/://g' | tr -d ' ')
+        # Get the first service name (skip 'version' and 'services' keys)
+        SERVICE_NAME=$(grep -E "^  [a-zA-Z0-9_-]+:" $COMPOSE_FILE | head -1 | sed 's/://g' | tr -d ' ')
         echo "  Service name: $SERVICE_NAME"
 
         # Create override file with port mapping
