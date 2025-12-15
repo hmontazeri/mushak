@@ -1,8 +1,8 @@
 # Mushak
 
-**Zero-Config, Zero-Downtime deployments to your Ubuntu server**
+**Zero-Config, Zero-Downtime deployments to your Linux server**
 
-Mushak is a CLI tool that brings PaaS-like deployment experience to your own VPS. Deploy your Docker-based applications with a simple `git push`, complete with automatic builds, health checks, and zero-downtime switching.
+Mushak is a CLI tool that brings PaaS-like deployment experience to your own Linux VPS. Deploy your Docker-based applications with a simple `git push`, complete with automatic builds, health checks, and zero-downtime switching.
 
 ## Features
 
@@ -18,7 +18,7 @@ Mushak is a CLI tool that brings PaaS-like deployment experience to your own VPS
 ## Prerequisites
 
 - **Local Machine**: Git installed
-- **Server**: Fresh Ubuntu server (20.04 or later) with SSH access
+- **Server**: Fresh Linux server (Ubuntu strongly recommended) with SSH access
 - **Domain**: DNS pointing to your server (for HTTPS via Caddy)
 - **Project**: Application with `Dockerfile` or `docker-compose.yml`
 
@@ -163,6 +163,35 @@ Show the current version.
 mushak version
 ```
 
+### `mushak logs`
+
+Stream logs from your application.
+
+```bash
+mushak logs
+```
+
+**Flags:**
+- `-f, --follow`: Follow log output
+- `-n, --lines`: Number of lines to show (default: 100)
+
+### `mushak exec`
+
+Open an interactive shell in your application container.
+
+```bash
+mushak exec
+```
+
+### `mushak secure-env`
+
+Securely set environment variables for your application.
+
+```bash
+mushak secure-env KEY=VALUE
+```
+
+
 ## Examples
 
 ### Node.js App with Dockerfile
@@ -274,9 +303,9 @@ Check the output from `mushak deploy`. Common issues:
 
 - [ ] GitHub Actions integration
 - [ ] Rollback to previous deployment
-- [ ] Log viewing (`mushak logs`)
-- [ ] SSH access (`mushak ssh`)
-- [ ] Environment variable management
+- [x] Log viewing (`mushak logs`)
+- [x] SSH access (`mushak exec`)
+- [x] Environment variable management (`mushak secure-env`)
 - [ ] Database migrations support
 - [ ] Custom health check commands
 
