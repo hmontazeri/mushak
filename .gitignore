@@ -35,3 +35,10 @@ Thumbs.db
 
 # Local config
 .mushak/
+
+# Node
+node_modules/
+
+# VitePress
+docs/.vitepress/dist
+docs/.vitepress/cache
