@@ -5,16 +5,34 @@
 Initializes a new application on the remote server.
 
 ```bash
-mushak init [flags]
+mushak init USER@HOST
+```
+
+**Arguments:**
+- `USER@HOST`: SSH connection string (e.g., `root@192.168.1.100`)
+
+Mushak will interactively prompt you for:
+- **Domain**: The domain name for your app
+- **App name**: Defaults to current directory name
+
+**Examples:**
+
+```bash
+# Interactive mode
+mushak init root@1.2.3.4
+
+# With flags
+mushak init root@1.2.3.4 --domain myapp.com --app my-app
 ```
 
 **Flags:**
-- `--host`: The Server hostname or IP (e.g., `1.2.3.4`). Required.
-- `--user`: The SSH username (e.g., `root`). Required.
-- `--domain`: The domain name for this app (e.g., `example.com`). Required.
-- `--app`: The internal name for the app. Defaults to current directory name.
-- `--branch`: The git branch to track. Defaults to checked-out branch.
+- `--host`: The Server hostname or IP (overrides HOST from argument)
+- `--user`: The SSH username (overrides USER from argument)
+- `--domain`: The domain name for this app (skips prompt if provided)
+- `--app`: The internal name for the app (skips prompt if provided)
+- `--branch`: The git branch to track. Defaults to `main`.
 - `--key`: Path to private SSH key. Defaults to `~/.ssh/id_rsa`.
+- `--port`: SSH port. Defaults to `22`.
 
 ## mushak deploy
 

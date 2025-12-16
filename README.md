@@ -62,12 +62,12 @@ Download the latest binary from [GitHub Releases](https://github.com/hmontazeri/
 In your project directory:
 
 ```bash
-mushak init \
-  --host user@your-server.com \
-  --domain app.example.com \
-  --app myapp \
-  --branch main
+mushak init root@your-server.com
 ```
+
+Mushak will prompt you for:
+- **Domain**: Your app's domain (e.g., `app.example.com`)
+- **App name**: Defaults to your directory name (press Enter to use default)
 
 This will:
 - Install Docker, Git, and Caddy on your server
@@ -119,7 +119,13 @@ health_timeout: 60
 Initialize a new app on the server.
 
 ```bash
-mushak init --host user@server.com --domain app.com --app myapp --branch main
+mushak init user@server.com
+```
+
+Mushak will interactively prompt for domain and app name. You can also provide them as flags:
+
+```bash
+mushak init user@server.com --domain app.com --app myapp --branch main
 ```
 
 **Flags:**
@@ -341,7 +347,9 @@ SECRET_KEY_BASE=your-secret-key
 
 ```bash
 # Initialize (auto-uploads .env.prod if exists)
-mushak init --host 1.2.3.4 --user root --domain myapp.com --app myapp
+mushak init root@1.2.3.4
+# Domain: myapp.com
+# App name [myapp]:
 # ✓ Found local .env.prod with 4 variables (DATABASE_PASSWORD, RAILS_MASTER_KEY, +2 more)
 # → Upload to server? [Y/n]: y
 # ✓ Uploaded .env.prod to server
@@ -401,11 +409,11 @@ Deploy multiple apps on the same server:
 ```bash
 # App 1
 cd ~/projects/app1
-mushak init --host user@server.com --domain app1.com --app app1
+mushak init user@server.com --domain app1.com
 
 # App 2
 cd ~/projects/app2
-mushak init --host user@server.com --domain app2.com --app app2
+mushak init user@server.com --domain app2.com
 ```
 
 Each app gets its own:
