@@ -17,7 +17,23 @@ func Execute() error {
 	return rootCmd.Execute()
 }
 
+var checkUpdateFunc func()
+
 func init() {
+	rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
+		// Don't check updates for completion, help, or upgrade commands
+		if cmd.Name() == "completion" || cmd.Name() == "help" || cmd.Name() == "upgrade" || cmd.Name() == "update" {
+			return
+		}
+		checkUpdateFunc = CheckUpdateAsync()
+	}
+
+	rootCmd.PersistentPostRun = func(cmd *cobra.Command, args []string) {
+		if checkUpdateFunc != nil {
+			checkUpdateFunc()
+		}
+	}
+
 	// Global flags can be added here
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.mushak.yaml)")
 }
