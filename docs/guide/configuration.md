@@ -89,3 +89,12 @@ If you have a `Dockerfile`, Mushak builds it as a standard image.
 If you have a `docker-compose.yml`, Mushak treats it as a service stack.
 - **Do not** map ports to the host (e.g., `- "80:80"`). Mushak manages port mapping dynamically to avoid conflicts.
 - Mushak will automatically detect the web service by looking for services with "web" in the name (e.g., `web`, `webapp`, `web-server`). If no service with "web" is found, it uses the first service defined. You can override this with a `mushak.yaml` file by specifying `service_name: your-service`.
+
+**Container Name Overrides:**
+
+Mushak automatically overrides `container_name` entries in your docker-compose.yml to enable zero-downtime deployments. Even if you specify custom container names, Mushak will override them via `docker-compose.override.yml`:
+
+- **Application services** get versioned names: `mushak-<app>-<sha>-<service>` (e.g., `mushak-myapp-abc123-web`)
+- **Infrastructure services** get static names: `<app>_<service>` (e.g., `myapp_postgres`)
+
+This allows old and new application containers to run side-by-side during deployments while keeping infrastructure services (databases, caches) on stable names that don't restart.

@@ -60,15 +60,17 @@ func runLogs(cmd *cobra.Command, args []string) error {
 
 	// Find the running container for this app
 	// Try multiple patterns to handle different naming conventions:
-	// 1. Mushak's naming: mushak-<app>-<sha>-<service>-1
-	// 2. User's custom container_name in docker-compose: <app>_<service> or <app>-<service>
+	// 1. Mushak's naming: mushak-<app>-<sha>-<service> (new override pattern)
+	// 2. Mushak's old naming: mushak-<app>-<sha>-<service>-1
+	// 3. Infrastructure: <app>_<service> (e.g., bareagent_postgres)
 	// Prioritize the web service container
 
 	patterns := []string{
-		fmt.Sprintf("mushak-%s-.*-web", cfg.AppName),  // Mushak naming with web service
+		fmt.Sprintf("mushak-%s-.*-web$", cfg.AppName),  // Mushak override naming with web service
+		fmt.Sprintf("mushak-%s-.*-web-", cfg.AppName),  // Mushak compose naming with web service
 		fmt.Sprintf("mushak-%s-", cfg.AppName),         // Any Mushak container for this app
-		fmt.Sprintf("%s[_-]web", cfg.AppName),          // Custom container_name with web
-		fmt.Sprintf("%s[_-]", cfg.AppName),             // Any custom container_name
+		fmt.Sprintf("%s[_-]web", cfg.AppName),          // Infrastructure or legacy naming with web
+		fmt.Sprintf("%s[_-]", cfg.AppName),             // Any container for app
 	}
 
 	var containerID string
