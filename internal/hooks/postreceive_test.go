@@ -327,6 +327,24 @@ func TestGeneratePostReceiveHook_ErrorHandling(t *testing.T) {
 	}
 }
 
+func TestGeneratePostReceiveHook_Sanitization(t *testing.T) {
+	script := GeneratePostReceiveHook("app", "app.com", "main")
+
+	sanitizationElements := []string{
+		"sanitize_docker_compose()",
+		"awk '",
+		"/^[[:space:]]*ports:/",
+		"Removing hardcoded 'ports'",
+		"sanitize_docker_compose \"docker-compose.yml\"",
+	}
+
+	for _, element := range sanitizationElements {
+		if !strings.Contains(script, element) {
+			t.Errorf("Script missing sanitization element: %q", element)
+		}
+	}
+}
+
 func TestGeneratePostReceiveHook_EmptyInputs(t *testing.T) {
 	// Test that function handles empty inputs gracefully
 	script := GeneratePostReceiveHook("", "", "")
