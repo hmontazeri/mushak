@@ -31,7 +31,7 @@ Usage:
 
 Example:
   mushak init root@192.168.1.100`,
-	RunE: runInit,
+	RunE: withTimer(runInit),
 }
 
 var (

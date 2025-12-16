@@ -24,7 +24,7 @@ var destroyCmd = &cobra.Command{
 - Removes local Git remote
 
 WARNING: This action is irreversible!`,
-	RunE: runDestroy,
+	RunE: withTimer(runDestroy),
 }
 
 var (

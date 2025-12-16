@@ -19,7 +19,7 @@ var deployCmd = &cobra.Command{
 	Short: "Deploy the current branch to the server",
 	Long: `Deploy pushes your code to the server's Git repository, which triggers
 the post-receive hook to build and deploy your application with zero downtime.`,
-	RunE: runDeploy,
+	RunE: withTimer(runDeploy),
 }
 
 var deployForce bool
