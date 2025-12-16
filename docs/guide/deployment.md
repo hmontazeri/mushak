@@ -27,13 +27,9 @@ Mushak shines at hosting multiple isolated apps on a single affordable VPS. Ever
 To deploy a second app:
 
 1.  Navigate to the second project folder.
-2.  Run init with a different app name and domain.
+2.  Run init.
     ```bash
-    mushak init \
-      --host your-server-ip \
-      --user user \
-      --domain api.myapp.com \
-      --app my-api
+    mushak init user@your-server-ip --domain api.myapp.com
     ```
 3.  Deploy.
     ```bash
@@ -51,7 +47,7 @@ Caddy automatically routes traffic based on the hostname.
 By default, Mushak deploys the current branch. You can enforce a specific branch (like `production`) during initialization:
 
 ```bash
-mushak init --branch production ...
+mushak init user@your-server --domain myapp.com --branch production
 ```
 
 Or you can use the `--branch` flag during deploy to deploy a specific local branch to the server:

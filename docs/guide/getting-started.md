@@ -60,11 +60,17 @@ Or specify the key explicitly with the `--key` flag when running `mushak init`.
 Go to your project directory (which must contain a `Dockerfile` or `docker-compose.yml`).
 
 ```bash
-mushak init \
-  --host your-server-ip \
-  --user root \
-  --domain myapp.com \
-  --app my-app-name
+mushak init root@your-server-ip
+```
+
+Mushak will prompt you for:
+- **Domain**: The domain name for your app (e.g., `myapp.com`)
+- **App name**: Defaults to your current directory name (press Enter to use default)
+
+You can also provide these values as flags if you prefer:
+
+```bash
+mushak init root@your-server-ip --domain myapp.com --app my-app-name
 ```
 
 This command will:

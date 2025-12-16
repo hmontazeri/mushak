@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/hmontazeri/mushak/internal/config"
 	"github.com/hmontazeri/mushak/internal/hooks"
@@ -15,14 +16,20 @@ import (
 )
 
 var initCmd = &cobra.Command{
-	Use:   "init",
+	Use:   "init [USER@HOST]",
 	Short: "Initialize a new app on the server",
 	Long: `Initialize sets up everything needed to deploy an app:
 - Installs Docker, Git, and Caddy on the server
 - Creates a bare Git repository
 - Configures Caddy for multi-app support
 - Installs the post-receive deployment hook
-- Adds a Git remote to your local repository`,
+- Adds a Git remote to your local repository
+
+Usage:
+  mushak init USER@HOST
+
+Example:
+  mushak init root@192.168.1.100`,
 	RunE: runInit,
 }
 
@@ -39,33 +46,72 @@ var (
 func init() {
 	rootCmd.AddCommand(initCmd)
 
-	initCmd.Flags().StringVar(&initHost, "host", "", "Server hostname or IP (required)")
-	initCmd.Flags().StringVar(&initUser, "user", "", "SSH username (required)")
-	initCmd.Flags().StringVar(&initDomain, "domain", "", "Domain name for the app (required)")
+	initCmd.Flags().StringVar(&initHost, "host", "", "Server hostname or IP")
+	initCmd.Flags().StringVar(&initUser, "user", "", "SSH username")
+	initCmd.Flags().StringVar(&initDomain, "domain", "", "Domain name for the app")
 	initCmd.Flags().StringVar(&initApp, "app", "", "App name (default: current directory name)")
 	initCmd.Flags().StringVar(&initBranch, "branch", "main", "Git branch to deploy")
 	initCmd.Flags().StringVar(&initKey, "key", "", "SSH key path (default: ~/.ssh/id_rsa)")
 	initCmd.Flags().StringVar(&initPort, "port", "22", "SSH port")
-
-	initCmd.MarkFlagRequired("host")
-	initCmd.MarkFlagRequired("user")
-	initCmd.MarkFlagRequired("domain")
 }
 
 func runInit(cmd *cobra.Command, args []string) error {
-	// Determine app name
-	if initApp == "" {
-		cwd, err := os.Getwd()
-		if err != nil {
-			return fmt.Errorf("failed to get current directory: %w", err)
+	// Parse USER@HOST from positional argument if provided
+	if len(args) > 0 {
+		userHost := args[0]
+		parts := splitUserHost(userHost)
+		if parts == nil {
+			return fmt.Errorf("invalid format. Expected USER@HOST (e.g., root@192.168.1.100)")
 		}
-		initApp = filepath.Base(cwd)
-		fmt.Printf("Using app name: %s\n", initApp)
+		// Only set if not already provided via flags
+		if initUser == "" {
+			initUser = parts[0]
+		}
+		if initHost == "" {
+			initHost = parts[1]
+		}
 	}
 
 	// Validate we're in a git repository
 	if !isGitRepo() {
 		return fmt.Errorf("not a git repository. Please run 'git init' first")
+	}
+
+	// Get current directory for default app name
+	cwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("failed to get current directory: %w", err)
+	}
+	defaultApp := filepath.Base(cwd)
+
+	// Prompt for domain if not provided
+	if initDomain == "" {
+		domain, err := utils.PromptString("Domain", "")
+		if err != nil {
+			return fmt.Errorf("failed to get domain: %w", err)
+		}
+		if domain == "" {
+			return fmt.Errorf("domain is required")
+		}
+		initDomain = domain
+	}
+
+	// Prompt for app name if not provided (with default)
+	if initApp == "" {
+		app, err := utils.PromptString("App name", defaultApp)
+		if err != nil {
+			return fmt.Errorf("failed to get app name: %w", err)
+		}
+		if app == "" {
+			initApp = defaultApp
+		} else {
+			initApp = app
+		}
+	}
+
+	// Validate required fields
+	if initUser == "" || initHost == "" {
+		return fmt.Errorf("user and host are required. Usage: mushak init USER@HOST")
 	}
 
 	fmt.Println("\n=== Mushak Initialization ===")
@@ -272,4 +318,13 @@ func getEnvVarKeys(path string) ([]string, error) {
 
 func confirmEnvUpload() (bool, error) {
 	return utils.Confirm("→ Upload to server?")
+}
+
+// splitUserHost parses USER@HOST format and returns [user, host]
+func splitUserHost(userHost string) []string {
+	parts := strings.Split(userHost, "@")
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return nil
+	}
+	return parts
 }
