@@ -392,3 +392,82 @@ func TestGeneratePostReceiveHook_SpecialCharacters(t *testing.T) {
 		})
 	}
 }
+
+func TestGeneratePostReceiveHook_ServiceCategorizationBeforeOverride(t *testing.T) {
+	// This test verifies the fix for the container name override ordering bug
+	// Service categorization MUST happen before override file creation
+	script := GeneratePostReceiveHook("testapp", "test.com", "main")
+
+	// Find the index where service categorization starts
+	serviceCategorizationMarker := "# Detect infrastructure services (databases, caches, etc.) that should persist"
+	categorizationIndex := strings.Index(script, serviceCategorizationMarker)
+	if categorizationIndex == -1 {
+		t.Fatal("Script doesn't contain service categorization section")
+	}
+
+	// Find the index where APP_SERVICES and INFRA_SERVICES are populated
+	appServicesPopulation := "APP_SERVICES=\"\""
+	appServicesIndex := strings.Index(script, appServicesPopulation)
+	if appServicesIndex == -1 {
+		t.Fatal("Script doesn't populate APP_SERVICES variable")
+	}
+
+	// Find the index where override file is created
+	overrideCreationMarker := "cat > docker-compose.override.yml <<EOF"
+	overrideIndex := strings.Index(script, overrideCreationMarker)
+	if overrideIndex == -1 {
+		t.Fatal("Script doesn't create docker-compose.override.yml")
+	}
+
+	// Verify that service categorization happens BEFORE override creation
+	if categorizationIndex >= overrideIndex {
+		t.Errorf("Service categorization (index %d) must happen BEFORE override file creation (index %d)",
+			categorizationIndex, overrideIndex)
+	}
+
+	if appServicesIndex >= overrideIndex {
+		t.Errorf("APP_SERVICES population (index %d) must happen BEFORE override file creation (index %d)",
+			appServicesIndex, overrideIndex)
+	}
+
+	// Verify that the loop using APP_SERVICES comes AFTER the variable is populated
+	appServicesLoopMarker := "for app_svc in $APP_SERVICES; do"
+	loopIndex := strings.Index(script, appServicesLoopMarker)
+	if loopIndex == -1 {
+		t.Fatal("Script doesn't contain APP_SERVICES loop")
+	}
+
+	if loopIndex <= appServicesIndex {
+		t.Errorf("APP_SERVICES loop (index %d) must happen AFTER APP_SERVICES is populated (index %d)",
+			loopIndex, appServicesIndex)
+	}
+}
+
+func TestGeneratePostReceiveHook_ContainerNameOverrides(t *testing.T) {
+	// Test that the override file includes container_name for all service types
+	script := GeneratePostReceiveHook("myapp", "myapp.com", "main")
+
+	// Check that override file includes container_name overrides for application services
+	appServiceOverride := "for app_svc in $APP_SERVICES; do"
+	if !strings.Contains(script, appServiceOverride) {
+		t.Error("Script doesn't include loop to override app service container names")
+	}
+
+	// Check for the actual override pattern
+	appContainerName := "container_name: ${PROJECT_NAME}-${app_svc}"
+	if !strings.Contains(script, appContainerName) {
+		t.Error("Script doesn't include versioned container_name pattern for app services")
+	}
+
+	// Check that override file includes container_name for infrastructure services
+	infraServiceOverride := "for infra_svc in $INFRA_SERVICES; do"
+	if !strings.Contains(script, infraServiceOverride) {
+		t.Error("Script doesn't include loop to override infra service container names")
+	}
+
+	// Check for infrastructure naming pattern
+	infraContainerName := "container_name: ${APP_NAME}_${infra_svc}"
+	if !strings.Contains(script, infraContainerName) {
+		t.Error("Script doesn't include static container_name pattern for infra services")
+	}
+}

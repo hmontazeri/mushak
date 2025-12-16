@@ -6,7 +6,10 @@ import (
 	"os/exec"
 
 	"github.com/hmontazeri/mushak/internal/config"
+	"github.com/hmontazeri/mushak/internal/hooks"
+	"github.com/hmontazeri/mushak/internal/server"
 	"github.com/hmontazeri/mushak/internal/ssh"
+	"github.com/hmontazeri/mushak/internal/ui"
 	"github.com/hmontazeri/mushak/internal/utils"
 	"github.com/spf13/cobra"
 )
@@ -45,17 +48,17 @@ func runDeploy(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to get current branch: %w", err)
 	}
 
-	fmt.Println("\n=== Mushak Deployment ===")
-	fmt.Printf("App: %s\n", cfg.AppName)
-	fmt.Printf("Server: %s@%s\n", cfg.User, cfg.Host)
-	fmt.Printf("Branch: %s -> %s\n", currentBranch, cfg.Branch)
-	fmt.Printf("Domain: https://%s\n", cfg.Domain)
-	fmt.Println()
+	ui.PrintHeader("Mushak Deployment")
+	ui.PrintKeyValue("App", cfg.AppName)
+	ui.PrintKeyValue("Server", fmt.Sprintf("%s@%s", cfg.User, cfg.Host))
+	ui.PrintKeyValue("Branch", fmt.Sprintf("%s -> %s", currentBranch, cfg.Branch))
+	ui.PrintKeyValue("Domain", fmt.Sprintf("https://%s", cfg.Domain))
+	println()
 
 	// Check if current branch matches configured branch
 	if currentBranch != cfg.Branch {
-		fmt.Printf("⚠ Warning: You're on branch '%s' but configured to deploy '%s'\n", currentBranch, cfg.Branch)
-		fmt.Println()
+		ui.PrintWarning(fmt.Sprintf("You're on branch '%s' but configured to deploy '%s'", currentBranch, cfg.Branch))
+		println()
 	}
 
 	// Verify git remote exists
@@ -66,9 +69,14 @@ func runDeploy(cmd *cobra.Command, args []string) error {
 
 	// Check for environment files and prompt if needed
 	if err := checkAndUploadEnvFile(cfg); err != nil {
-		fmt.Printf("⚠ Warning: %v\n", err)
+		ui.PrintWarning(fmt.Sprintf("%v", err))
 	}
-	fmt.Println()
+
+	// Update post-receive hook on server to ensure it has the latest logic
+	if err := updateServerHook(cfg); err != nil {
+		ui.PrintWarning(fmt.Sprintf("Failed to update deployment hook: %v", err))
+	}
+	println()
 
 	// Build push command
 	pushArgs := []string{"push", cfg.RemoteName, fmt.Sprintf("HEAD:refs/heads/%s", cfg.Branch)}
@@ -76,8 +84,8 @@ func runDeploy(cmd *cobra.Command, args []string) error {
 		pushArgs = append(pushArgs, "--force")
 	}
 
-	fmt.Println("→ Pushing to server...")
-	fmt.Println()
+	ui.PrintInfo("Pushing to server...")
+	println()
 
 	// Execute git push with output streaming
 	pushCmd := exec.Command("git", pushArgs...)
@@ -106,6 +114,33 @@ func getCurrentBranch() (string, error) {
 	}
 
 	return branch, nil
+}
+
+// updateServerHook updates the post-receive hook on the server
+func updateServerHook(cfg *config.DeployConfig) error {
+	ui.PrintInfo("Updating deployment hook...")
+
+	client, err := ssh.NewClient(ssh.Config{
+		Host: cfg.Host,
+		User: cfg.User,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create SSH client: %w", err)
+	}
+
+	if err := client.Connect(); err != nil {
+		return fmt.Errorf("failed to connect to server: %w", err)
+	}
+	defer client.Close()
+
+	executor := ssh.NewExecutor(client)
+
+	hookScript := hooks.GeneratePostReceiveHook(cfg.AppName, cfg.Domain, cfg.Branch)
+	if err := server.InstallPostReceiveHook(executor, cfg.AppName, hookScript); err != nil {
+		return fmt.Errorf("failed to install post-receive hook: %w", err)
+	}
+
+	return nil
 }
 
 // checkAndUploadEnvFile checks if env file exists on server, if not prompts to upload local
@@ -166,13 +201,13 @@ func checkAndUploadEnvFile(cfg *config.DeployConfig) error {
 			preview += ")"
 		}
 
-		fmt.Printf("⚠ No environment file found on server\n")
-		fmt.Printf("✓ Found local %s with %d variable%s%s\n", localEnvFile, count, pluralize(count), preview)
+		ui.PrintWarning("No environment file found on server")
+		ui.PrintSuccess(fmt.Sprintf("Found local %s with %d variable%s%s", localEnvFile, count, pluralize(count), preview))
 
 		// Prompt user
 		confirmed, err := utils.Confirm("→ Upload to server?")
 		if err != nil || !confirmed {
-			fmt.Println("  Skipped. Use 'mushak env push' to upload later")
+			ui.PrintInfo("Skipped. Use 'mushak env push' to upload later")
 			return nil
 		}
 
@@ -193,13 +228,13 @@ func checkAndUploadEnvFile(cfg *config.DeployConfig) error {
 			return fmt.Errorf("failed to upload: %w", err)
 		}
 
-		fmt.Printf("✓ Uploaded %s to server\n", localEnvFile)
+		ui.PrintSuccess(fmt.Sprintf("Uploaded %s to server", localEnvFile))
 	} else {
 		// Env file exists on server
 		if errProd == nil {
-			fmt.Println("→ Environment file: .env.prod ✓")
+			ui.PrintSuccess("Environment file: .env.prod")
 		} else {
-			fmt.Println("→ Environment file: .env ✓")
+			ui.PrintSuccess("Environment file: .env")
 		}
 	}
 
