@@ -4,11 +4,12 @@ import (
 	"fmt"
 
 	"github.com/hmontazeri/mushak/internal/ssh"
+	"github.com/hmontazeri/mushak/internal/ui"
 )
 
 // SetupGitRepo creates a bare Git repository on the server
 func SetupGitRepo(executor *ssh.Executor, appName string) error {
-	fmt.Printf("Setting up Git repository for %s...\n", appName)
+	ui.PrintInfo(fmt.Sprintf("Setting up Git repository for %s...", appName))
 
 	repoPath := fmt.Sprintf("/var/repo/%s.git", appName)
 	deployPath := fmt.Sprintf("/var/www/%s", appName)
@@ -43,13 +44,13 @@ func SetupGitRepo(executor *ssh.Executor, appName string) error {
 		return fmt.Errorf("failed to set deploy permissions: %w", err)
 	}
 
-	fmt.Println("✓ Git repository created")
+	ui.PrintSuccess("Git repository created")
 	return nil
 }
 
 // InstallPostReceiveHook installs the post-receive hook
 func InstallPostReceiveHook(executor *ssh.Executor, appName, hookScript string) error {
-	fmt.Println("Installing post-receive hook...")
+	ui.PrintInfo("Installing post-receive hook...")
 
 	hookPath := fmt.Sprintf("/var/repo/%s.git/hooks/post-receive", appName)
 
@@ -63,6 +64,6 @@ func InstallPostReceiveHook(executor *ssh.Executor, appName, hookScript string) 
 		return fmt.Errorf("failed to make hook executable: %w", err)
 	}
 
-	fmt.Println("✓ Post-receive hook installed")
+	ui.PrintSuccess("Post-receive hook installed")
 	return nil
 }

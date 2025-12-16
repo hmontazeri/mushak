@@ -5,11 +5,12 @@ import (
 	"strings"
 
 	"github.com/hmontazeri/mushak/internal/ssh"
+	"github.com/hmontazeri/mushak/internal/ui"
 )
 
 // InstallDependencies installs all required dependencies on the server
 func InstallDependencies(executor *ssh.Executor) error {
-	fmt.Println("Installing dependencies...")
+	ui.PrintInfo("Installing dependencies...")
 
 	if err := InstallGit(executor); err != nil {
 		return err
@@ -23,21 +24,21 @@ func InstallDependencies(executor *ssh.Executor) error {
 		return err
 	}
 
-	fmt.Println("✓ All dependencies installed successfully")
+	ui.PrintSuccess("All dependencies installed successfully")
 	return nil
 }
 
 // InstallGit installs Git if not already present
 func InstallGit(executor *ssh.Executor) error {
-	fmt.Print("Checking Git... ")
+	ui.PrintInfo("Checking Git...")
 
 	// Check if git is installed
 	if _, err := executor.Run("which git"); err == nil {
-		fmt.Println("already installed")
+		ui.PrintSuccess("Git already installed")
 		return nil
 	}
 
-	fmt.Println("installing...")
+	ui.PrintInfo("Installing Git...")
 
 	// Update package list
 	if _, err := executor.RunSudo("apt-get update -qq"); err != nil {
@@ -49,21 +50,21 @@ func InstallGit(executor *ssh.Executor) error {
 		return fmt.Errorf("failed to install git: %w", err)
 	}
 
-	fmt.Println("✓ Git installed")
+	ui.PrintSuccess("Git installed")
 	return nil
 }
 
 // InstallDocker installs Docker if not already present
 func InstallDocker(executor *ssh.Executor) error {
-	fmt.Print("Checking Docker... ")
+	ui.PrintInfo("Checking Docker...")
 
 	// Check if docker is installed
 	if _, err := executor.Run("which docker"); err == nil {
-		fmt.Println("already installed")
+		ui.PrintSuccess("Docker already installed")
 		return nil
 	}
 
-	fmt.Println("installing...")
+	ui.PrintInfo("Installing Docker...")
 
 	// Install prerequisites
 	prereqs := []string{
@@ -119,24 +120,24 @@ func InstallDocker(executor *ssh.Executor) error {
 	// Add user to docker group
 	if _, err := executor.RunSudo("usermod -aG docker $USER"); err != nil {
 		// Not critical, user can run docker with sudo
-		fmt.Println("⚠ Warning: Could not add user to docker group")
+		ui.PrintWarning("Could not add user to docker group")
 	}
 
-	fmt.Println("✓ Docker installed")
+	ui.PrintSuccess("Docker installed")
 	return nil
 }
 
 // InstallCaddy installs Caddy if not already present
 func InstallCaddy(executor *ssh.Executor) error {
-	fmt.Print("Checking Caddy... ")
+	ui.PrintInfo("Checking Caddy...")
 
 	// Check if caddy is installed
 	if _, err := executor.Run("which caddy"); err == nil {
-		fmt.Println("already installed")
+		ui.PrintSuccess("Caddy already installed")
 		return nil
 	}
 
-	fmt.Println("installing...")
+	ui.PrintInfo("Installing Caddy...")
 
 	// Install prerequisites
 	if _, err := executor.RunSudo("DEBIAN_FRONTEND=noninteractive apt-get install -y debian-keyring debian-archive-keyring apt-transport-https curl"); err != nil {
@@ -174,6 +175,6 @@ func InstallCaddy(executor *ssh.Executor) error {
 		return fmt.Errorf("failed to enable Caddy: %w", err)
 	}
 
-	fmt.Println("✓ Caddy installed")
+	ui.PrintSuccess("Caddy installed")
 	return nil
 }

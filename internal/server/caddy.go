@@ -4,11 +4,12 @@ import (
 	"fmt"
 
 	"github.com/hmontazeri/mushak/internal/ssh"
+	"github.com/hmontazeri/mushak/internal/ui"
 )
 
 // InitializeCaddyMultiApp sets up Caddy for multi-app support
 func InitializeCaddyMultiApp(executor *ssh.Executor) error {
-	fmt.Println("Initializing Caddy multi-app setup...")
+	ui.PrintInfo("Initializing Caddy multi-app setup...")
 
 	// Create apps directory
 	if _, err := executor.RunSudo("mkdir -p /etc/caddy/apps"); err != nil {
@@ -47,17 +48,17 @@ import /etc/caddy/apps/*.caddy
 				return fmt.Errorf("failed to update Caddyfile: %w", err)
 			}
 
-			fmt.Println("⚠ Existing Caddyfile backed up to /etc/caddy/Caddyfile.backup")
+			ui.PrintWarning("Existing Caddyfile backed up to /etc/caddy/Caddyfile.backup")
 		}
 	}
 
-	fmt.Println("✓ Caddy multi-app setup initialized")
+	ui.PrintSuccess("Caddy multi-app setup initialized")
 	return nil
 }
 
 // CreateAppCaddyConfig creates or updates the Caddy config for an app
 func CreateAppCaddyConfig(executor *ssh.Executor, appName, domain string, port int) error {
-	fmt.Printf("Updating Caddy config for %s...\n", appName)
+	ui.PrintInfo(fmt.Sprintf("Updating Caddy config for %s...", appName))
 
 	configPath := fmt.Sprintf("/etc/caddy/apps/%s.caddy", appName)
 
@@ -75,13 +76,13 @@ func CreateAppCaddyConfig(executor *ssh.Executor, appName, domain string, port i
 		return err
 	}
 
-	fmt.Println("✓ Caddy configuration updated")
+	ui.PrintSuccess("Caddy configuration updated")
 	return nil
 }
 
 // RemoveAppCaddyConfig removes the Caddy config for an app
 func RemoveAppCaddyConfig(executor *ssh.Executor, appName string) error {
-	fmt.Printf("Removing Caddy config for %s...\n", appName)
+	ui.PrintInfo(fmt.Sprintf("Removing Caddy config for %s...", appName))
 
 	configPath := fmt.Sprintf("/etc/caddy/apps/%s.caddy", appName)
 
@@ -95,7 +96,7 @@ func RemoveAppCaddyConfig(executor *ssh.Executor, appName string) error {
 		return err
 	}
 
-	fmt.Println("✓ Caddy configuration removed")
+	ui.PrintSuccess("Caddy configuration removed")
 	return nil
 }
 

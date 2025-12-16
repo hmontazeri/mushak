@@ -11,6 +11,7 @@ import (
 	"github.com/hmontazeri/mushak/internal/hooks"
 	"github.com/hmontazeri/mushak/internal/server"
 	"github.com/hmontazeri/mushak/internal/ssh"
+	"github.com/hmontazeri/mushak/internal/ui"
 	"github.com/hmontazeri/mushak/internal/utils"
 	"github.com/spf13/cobra"
 )
@@ -114,15 +115,19 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("user and host are required. Usage: mushak init USER@HOST")
 	}
 
-	fmt.Println("\n=== Mushak Initialization ===")
-	fmt.Printf("Server: %s@%s\n", initUser, initHost)
-	fmt.Printf("App: %s\n", initApp)
-	fmt.Printf("Domain: %s\n", initDomain)
-	fmt.Printf("Branch: %s\n", initBranch)
-	fmt.Println()
+	// Print banner
+	ui.PrintBanner()
+
+	// Print configuration
+	ui.PrintHeader("Initialization")
+	ui.PrintKeyValue("Server", fmt.Sprintf("%s@%s", initUser, initHost))
+	ui.PrintKeyValue("App", initApp)
+	ui.PrintKeyValue("Domain", initDomain)
+	ui.PrintKeyValue("Branch", initBranch)
+	println()
 
 	// Create SSH client
-	fmt.Println("→ Connecting to server...")
+	ui.PrintInfo("Connecting to server...")
 	sshClient, err := ssh.NewClient(ssh.Config{
 		Host:    initHost,
 		Port:    initPort,
@@ -138,7 +143,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	}
 	defer sshClient.Close()
 
-	fmt.Println("✓ Connected to server")
+	ui.PrintSuccess("Connected to server")
 
 	executor := ssh.NewExecutor(sshClient)
 
@@ -146,29 +151,29 @@ func runInit(cmd *cobra.Command, args []string) error {
 	if err := server.InstallDependencies(executor); err != nil {
 		return fmt.Errorf("failed to install dependencies: %w", err)
 	}
-	fmt.Println()
+	println()
 
 	// Initialize Caddy multi-app setup
 	if err := server.InitializeCaddyMultiApp(executor); err != nil {
 		return fmt.Errorf("failed to initialize Caddy: %w", err)
 	}
-	fmt.Println()
+	println()
 
 	// Setup Git repository
 	if err := server.SetupGitRepo(executor, initApp); err != nil {
 		return fmt.Errorf("failed to setup Git repo: %w", err)
 	}
-	fmt.Println()
+	println()
 
 	// Generate and install post-receive hook
 	hookScript := hooks.GeneratePostReceiveHook(initApp, initDomain, initBranch)
 	if err := server.InstallPostReceiveHook(executor, initApp, hookScript); err != nil {
 		return fmt.Errorf("failed to install post-receive hook: %w", err)
 	}
-	fmt.Println()
+	println()
 
 	// Create initial Caddy config (placeholder)
-	fmt.Println("→ Creating initial Caddy configuration...")
+	ui.PrintInfo("Creating initial Caddy configuration...")
 	configPath := fmt.Sprintf("/etc/caddy/apps/%s.caddy", initApp)
 	placeholderConfig := fmt.Sprintf(`# %s - Not yet deployed
 # This file will be updated after first deployment
@@ -177,19 +182,19 @@ func runInit(cmd *cobra.Command, args []string) error {
 	if err := executor.WriteFileSudo(configPath, placeholderConfig); err != nil {
 		return fmt.Errorf("failed to create Caddy config: %w", err)
 	}
-	fmt.Println("✓ Caddy configuration created")
-	fmt.Println()
+	ui.PrintSuccess("Caddy configuration created")
+	println()
 
 	// Check for local env file and prompt to upload
 	if envFile, err := detectAndUploadEnvFile(executor, initApp); err == nil && envFile != "" {
-		fmt.Printf("✓ Uploaded %s to server\n", envFile)
+		ui.PrintSuccess(fmt.Sprintf("Uploaded %s to server", envFile))
 	}
 
 	// Add Git remote
 	remoteName := "mushak"
 	remoteURL := fmt.Sprintf("ssh://%s@%s:%s/var/repo/%s.git", initUser, initHost, initPort, initApp)
 
-	fmt.Printf("→ Adding Git remote '%s'...\n", remoteName)
+	ui.PrintInfo(fmt.Sprintf("Adding Git remote '%s'...", remoteName))
 
 	// Check if remote already exists
 	checkCmd := exec.Command("git", "remote", "get-url", remoteName)
@@ -199,16 +204,16 @@ func runInit(cmd *cobra.Command, args []string) error {
 		if err := updateCmd.Run(); err != nil {
 			return fmt.Errorf("failed to update Git remote: %w", err)
 		}
-		fmt.Printf("✓ Updated Git remote '%s'\n", remoteName)
+		ui.PrintSuccess(fmt.Sprintf("Updated Git remote '%s'", remoteName))
 	} else {
 		// Add new remote
 		addCmd := exec.Command("git", "remote", "add", remoteName, remoteURL)
 		if err := addCmd.Run(); err != nil {
 			return fmt.Errorf("failed to add Git remote: %w", err)
 		}
-		fmt.Printf("✓ Added Git remote '%s'\n", remoteName)
+		ui.PrintSuccess(fmt.Sprintf("Added Git remote '%s'", remoteName))
 	}
-	fmt.Println()
+	println()
 
 	// Save configuration locally
 	deployConfig := &config.DeployConfig{
@@ -224,16 +229,18 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to save config: %w", err)
 	}
 
-	fmt.Println("========================================")
-	fmt.Println("✓ Initialization Complete!")
-	fmt.Println("========================================")
-	fmt.Println()
-	fmt.Println("Next steps:")
-	fmt.Printf("  1. Deploy your app: mushak deploy\n")
-	fmt.Printf("  2. Your app will be available at: https://%s\n", initDomain)
-	fmt.Println()
-	fmt.Println("Note: Make sure DNS for your domain points to the server")
-	fmt.Println("========================================")
+	// Success message
+	println()
+	ui.PrintSeparator()
+	ui.PrintSuccess("Initialization Complete!")
+	ui.PrintSeparator()
+	println()
+	ui.PrintHeader("Next Steps")
+	ui.PrintKeyValue("1", "Deploy your app with 'mushak deploy'")
+	ui.PrintKeyValue("2", fmt.Sprintf("Access at https://%s", initDomain))
+	println()
+	ui.PrintInfo("Make sure DNS for your domain points to the server")
+	println()
 
 	return nil
 }
@@ -275,12 +282,12 @@ func detectAndUploadEnvFile(executor *ssh.Executor, appName string) (string, err
 		preview += ")"
 	}
 
-	fmt.Printf("✓ Found local %s with %d variable%s%s\n", envFile, count, pluralize(count), preview)
+	ui.PrintSuccess(fmt.Sprintf("Found local %s with %d variable%s%s", envFile, count, pluralize(count), preview))
 
 	// Prompt user
 	confirmed, err := confirmEnvUpload()
 	if err != nil || !confirmed {
-		fmt.Println("  Skipped environment file upload")
+		ui.PrintInfo("Skipped environment file upload")
 		return "", nil
 	}
 
