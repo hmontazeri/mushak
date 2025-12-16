@@ -10,8 +10,8 @@ func TestUpdateCommand(t *testing.T) {
 		t.Fatal("updateCmd should not be nil")
 	}
 
-	if updateCmd.Use != "update" {
-		t.Errorf("updateCmd.Use = %v, want update", updateCmd.Use)
+	if updateCmd.Use != "upgrade" {
+		t.Errorf("updateCmd.Use = %v, want upgrade", updateCmd.Use)
 	}
 
 	if updateCmd.Short == "" {

@@ -12,8 +12,9 @@ import (
 )
 
 var updateCmd = &cobra.Command{
-	Use:   "update",
-	Short: "Update mushak to the latest version",
+	Use:     "upgrade",
+	Aliases: []string{"update"},
+	Short:   "Upgrade mushak to the latest version",
 	Long:  `Update checks for the latest release on GitHub and updates the binary if a newer version is available.`,
 	RunE:  runUpdate,
 }
