@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+
 var deployCmd = &cobra.Command{
 	Use:   "deploy",
 	Short: "Deploy the current branch to the server",
@@ -23,11 +24,13 @@ the post-receive hook to build and deploy your application with zero downtime.`,
 }
 
 var deployForce bool
+var deployNoCache bool
 
 func init() {
 	rootCmd.AddCommand(deployCmd)
 
 	deployCmd.Flags().BoolVarP(&deployForce, "force", "f", false, "Force push to server")
+	deployCmd.Flags().BoolVar(&deployNoCache, "no-cache", false, "Do not use cache when building the image")
 }
 
 func runDeploy(cmd *cobra.Command, args []string) error {
@@ -53,6 +56,9 @@ func runDeploy(cmd *cobra.Command, args []string) error {
 	ui.PrintKeyValue("Server", fmt.Sprintf("%s@%s", cfg.User, cfg.Host))
 	ui.PrintKeyValue("Branch", fmt.Sprintf("%s -> %s", currentBranch, cfg.Branch))
 	ui.PrintKeyValue("Domain", fmt.Sprintf("https://%s", cfg.Domain))
+	if deployNoCache {
+		ui.PrintKeyValue("Cache", "Disabled")
+	}
 	println()
 
 	// Check if current branch matches configured branch
@@ -135,7 +141,7 @@ func updateServerHook(cfg *config.DeployConfig) error {
 
 	executor := ssh.NewExecutor(client)
 
-	hookScript := hooks.GeneratePostReceiveHook(cfg.AppName, cfg.Domain, cfg.Branch)
+	hookScript := hooks.GeneratePostReceiveHook(cfg.AppName, cfg.Domain, cfg.Branch, deployNoCache)
 	if err := server.InstallPostReceiveHook(executor, cfg.AppName, hookScript); err != nil {
 		return fmt.Errorf("failed to install post-receive hook: %w", err)
 	}

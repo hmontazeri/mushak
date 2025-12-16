@@ -11,6 +11,7 @@ func TestGeneratePostReceiveHook(t *testing.T) {
 		appName  string
 		domain   string
 		branch   string
+		noCache  bool
 		contains []string
 	}{
 		{
@@ -49,11 +50,23 @@ func TestGeneratePostReceiveHook(t *testing.T) {
 				"HEALTH_TIMEOUT=30",
 			},
 		},
+		{
+			name:    "no cache enabled",
+			appName: "nocacheapp",
+			domain:  "nocache.example.com",
+			branch:  "main",
+			noCache: true,
+			contains: []string{
+				"BUILD_OPTS=\"--no-cache\"",
+				"docker compose -p $PROJECT_NAME up -d --build $BUILD_OPTS",
+				"docker build $BUILD_OPTS -t $PROJECT_NAME .",
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			script := GeneratePostReceiveHook(tt.appName, tt.domain, tt.branch)
+			script := GeneratePostReceiveHook(tt.appName, tt.domain, tt.branch, tt.noCache)
 
 			if script == "" {
 				t.Error("GeneratePostReceiveHook() returned empty script")
@@ -75,7 +88,7 @@ func TestGeneratePostReceiveHook_ScriptStructure(t *testing.T) {
 	domain := "test.example.com"
 	branch := "main"
 
-	script := GeneratePostReceiveHook(appName, domain, branch)
+	script := GeneratePostReceiveHook(appName, domain, branch, false)
 
 	// Test that script has proper bash structure
 	requiredElements := []string{
@@ -93,7 +106,7 @@ func TestGeneratePostReceiveHook_ScriptStructure(t *testing.T) {
 }
 
 func TestGeneratePostReceiveHook_DeploymentSteps(t *testing.T) {
-	script := GeneratePostReceiveHook("app", "app.com", "main")
+	script := GeneratePostReceiveHook("app", "app.com", "main", false)
 
 	// Check that deployment steps are included
 	deploymentSteps := []string{
@@ -116,7 +129,7 @@ func TestGeneratePostReceiveHook_DeploymentSteps(t *testing.T) {
 }
 
 func TestGeneratePostReceiveHook_DockerSupport(t *testing.T) {
-	script := GeneratePostReceiveHook("app", "app.com", "main")
+	script := GeneratePostReceiveHook("app", "app.com", "main", false)
 
 	// Check for Docker Compose support
 	dockerComposeElements := []string{
@@ -147,7 +160,7 @@ func TestGeneratePostReceiveHook_DockerSupport(t *testing.T) {
 }
 
 func TestGeneratePostReceiveHook_HealthCheck(t *testing.T) {
-	script := GeneratePostReceiveHook("app", "app.com", "main")
+	script := GeneratePostReceiveHook("app", "app.com", "main", false)
 
 	healthCheckElements := []string{
 		"Waiting for service to be healthy",
@@ -166,7 +179,7 @@ func TestGeneratePostReceiveHook_HealthCheck(t *testing.T) {
 }
 
 func TestGeneratePostReceiveHook_Rollback(t *testing.T) {
-	script := GeneratePostReceiveHook("app", "app.com", "main")
+	script := GeneratePostReceiveHook("app", "app.com", "main", false)
 
 	rollbackElements := []string{
 		"Rolling back",
@@ -183,7 +196,7 @@ func TestGeneratePostReceiveHook_Rollback(t *testing.T) {
 }
 
 func TestGeneratePostReceiveHook_CaddyIntegration(t *testing.T) {
-	script := GeneratePostReceiveHook("myapp", "myapp.com", "main")
+	script := GeneratePostReceiveHook("myapp", "myapp.com", "main", false)
 
 	caddyElements := []string{
 		"Updating Caddy configuration",
@@ -201,7 +214,7 @@ func TestGeneratePostReceiveHook_CaddyIntegration(t *testing.T) {
 }
 
 func TestGeneratePostReceiveHook_Cleanup(t *testing.T) {
-	script := GeneratePostReceiveHook("app", "app.com", "main")
+	script := GeneratePostReceiveHook("app", "app.com", "main", false)
 
 	cleanupElements := []string{
 		"Cleaning up old containers",
@@ -217,7 +230,7 @@ func TestGeneratePostReceiveHook_Cleanup(t *testing.T) {
 }
 
 func TestGeneratePostReceiveHook_NetworkAndInfra(t *testing.T) {
-	script := GeneratePostReceiveHook("app", "app.com", "main")
+	script := GeneratePostReceiveHook("app", "app.com", "main", false)
 
 	expectedElements := []string{
 		"mushak-${APP_NAME}-net",
@@ -241,7 +254,7 @@ func TestGeneratePostReceiveHook_NetworkAndInfra(t *testing.T) {
 }
 
 func TestGeneratePostReceiveHook_BranchFiltering(t *testing.T) {
-	script := GeneratePostReceiveHook("app", "app.com", "production")
+	script := GeneratePostReceiveHook("app", "app.com", "production", false)
 
 	branchElements := []string{
 		"BRANCH=$(git rev-parse --symbolic --abbrev-ref $refname)",
@@ -257,7 +270,7 @@ func TestGeneratePostReceiveHook_BranchFiltering(t *testing.T) {
 }
 
 func TestGeneratePostReceiveHook_ConfigurationParsing(t *testing.T) {
-	script := GeneratePostReceiveHook("app", "app.com", "main")
+	script := GeneratePostReceiveHook("app", "app.com", "main", false)
 
 	configElements := []string{
 		"mushak.yaml",
@@ -275,7 +288,7 @@ func TestGeneratePostReceiveHook_ConfigurationParsing(t *testing.T) {
 }
 
 func TestGeneratePostReceiveHook_PortManagement(t *testing.T) {
-	script := GeneratePostReceiveHook("app", "app.com", "main")
+	script := GeneratePostReceiveHook("app", "app.com", "main", false)
 
 	portElements := []string{
 		"Finding available port",
@@ -294,7 +307,7 @@ func TestGeneratePostReceiveHook_PortManagement(t *testing.T) {
 }
 
 func TestGeneratePostReceiveHook_PathsAndDirectories(t *testing.T) {
-	script := GeneratePostReceiveHook("testapp", "test.com", "main")
+	script := GeneratePostReceiveHook("testapp", "test.com", "main", false)
 
 	pathElements := []string{
 		"DEPLOY_DIR=\"/var/www/$APP_NAME",
@@ -311,7 +324,7 @@ func TestGeneratePostReceiveHook_PathsAndDirectories(t *testing.T) {
 }
 
 func TestGeneratePostReceiveHook_ErrorHandling(t *testing.T) {
-	script := GeneratePostReceiveHook("app", "app.com", "main")
+	script := GeneratePostReceiveHook("app", "app.com", "main", false)
 
 	errorElements := []string{
 		"set -e",
@@ -328,7 +341,7 @@ func TestGeneratePostReceiveHook_ErrorHandling(t *testing.T) {
 }
 
 func TestGeneratePostReceiveHook_Sanitization(t *testing.T) {
-	script := GeneratePostReceiveHook("app", "app.com", "main")
+	script := GeneratePostReceiveHook("app", "app.com", "main", false)
 
 	sanitizationElements := []string{
 		"sanitize_docker_compose()",
@@ -347,7 +360,7 @@ func TestGeneratePostReceiveHook_Sanitization(t *testing.T) {
 
 func TestGeneratePostReceiveHook_EmptyInputs(t *testing.T) {
 	// Test that function handles empty inputs gracefully
-	script := GeneratePostReceiveHook("", "", "")
+	script := GeneratePostReceiveHook("", "", "", false)
 
 	// Should still generate a script structure even with empty inputs
 	if script == "" {
@@ -389,7 +402,7 @@ func TestGeneratePostReceiveHook_SpecialCharacters(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			script := GeneratePostReceiveHook(tt.appName, tt.domain, tt.branch)
+			script := GeneratePostReceiveHook(tt.appName, tt.domain, tt.branch, false)
 
 			if script == "" {
 				t.Error("GeneratePostReceiveHook() returned empty script")
@@ -414,7 +427,7 @@ func TestGeneratePostReceiveHook_SpecialCharacters(t *testing.T) {
 func TestGeneratePostReceiveHook_ServiceCategorizationBeforeOverride(t *testing.T) {
 	// This test verifies the fix for the container name override ordering bug
 	// Service categorization MUST happen before override file creation
-	script := GeneratePostReceiveHook("testapp", "test.com", "main")
+	script := GeneratePostReceiveHook("testapp", "test.com", "main", false)
 
 	// Find the index where service categorization starts
 	serviceCategorizationMarker := "# Detect infrastructure services (databases, caches, etc.) that should persist"
@@ -463,7 +476,7 @@ func TestGeneratePostReceiveHook_ServiceCategorizationBeforeOverride(t *testing.
 
 func TestGeneratePostReceiveHook_ContainerNameOverrides(t *testing.T) {
 	// Test that the override file includes container_name for all service types
-	script := GeneratePostReceiveHook("myapp", "myapp.com", "main")
+	script := GeneratePostReceiveHook("myapp", "myapp.com", "main", false)
 
 	// Check that override file includes container_name overrides for application services
 	appServiceOverride := "for app_svc in $APP_SERVICES; do"

@@ -5,7 +5,12 @@ import (
 )
 
 // GeneratePostReceiveHook generates the post-receive hook script
-func GeneratePostReceiveHook(appName, domain, branch string) string {
+func GeneratePostReceiveHook(appName, domain, branch string, noCache bool) string {
+	buildOpts := ""
+	if noCache {
+		buildOpts = "--no-cache"
+	}
+
 	return fmt.Sprintf(`#!/bin/bash
 set -e
 
@@ -13,6 +18,7 @@ set -e
 APP_NAME="%s"
 DOMAIN="%s"
 DEPLOY_BRANCH="%s"
+BUILD_OPTS="%s"
 INTERNAL_PORT=80
 HEALTH_PATH="/"
 HEALTH_TIMEOUT=30
@@ -331,14 +337,14 @@ EOF
             echo "  Building and deploying application services..."
             # Use --no-deps to prevent Docker from trying to interact with the infra services in THIS project scope
             # (since they are now managed by the infra project)
-            docker compose -p $PROJECT_NAME up -d --build --no-deps $APP_SERVICES
+            docker compose -p $PROJECT_NAME up -d --build $BUILD_OPTS --no-deps $APP_SERVICES
         else
             # Fallback: deploy everything if we couldn't categorize
-            docker compose -p $PROJECT_NAME up -d --build
+            docker compose -p $PROJECT_NAME up -d --build $BUILD_OPTS
         fi
     else
         # Dockerfile
-        docker build -t $PROJECT_NAME .
+        docker build $BUILD_OPTS -t $PROJECT_NAME .
 
         ENV_OPTS=""
         if [ -f ".env" ]; then
@@ -436,5 +442,5 @@ EOF
     echo "URL: https://$DOMAIN"
     echo "========================================="
 done
-`, appName, domain, branch)
+`, appName, domain, branch, buildOpts)
 }

@@ -147,7 +147,7 @@ func runEnvSet(cmd *cobra.Command, args []string) error {
 
 	// Update deployment hook (to ensure it supports .env)
 	ui.PrintInfo("Updating deployment hook...")
-	hookScript := hooks.GeneratePostReceiveHook(cfg.AppName, cfg.Domain, cfg.Branch)
+	hookScript := hooks.GeneratePostReceiveHook(cfg.AppName, cfg.Domain, cfg.Branch, false)
 	if err := server.InstallPostReceiveHook(executor, cfg.AppName, hookScript); err != nil {
 		return fmt.Errorf("failed to update hook: %w", err)
 	}
