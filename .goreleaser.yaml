@@ -3,7 +3,6 @@ project_name: mushak
 builds:
   - env:
       - CGO_ENABLED=0
-    dir: .
     main: ./cmd/mushak
     binary: mushak
     goos:
@@ -28,7 +27,7 @@ archives:
     # use zip for windows
     format_overrides:
     - goos: windows
-      format: zip
+      formats: [zip]
     wrap_in_directory: false
     files:
       - README.md
