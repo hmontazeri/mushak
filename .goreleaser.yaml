@@ -3,6 +3,7 @@ project_name: mushak
 builds:
   - env:
       - CGO_ENABLED=0
+    main: ./cmd/mushak
     goos:
       - linux
       - darwin
