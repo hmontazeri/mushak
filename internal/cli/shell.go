@@ -20,7 +20,7 @@ var shellCmd = &cobra.Command{
 	Short: "Open an interactive shell in the application container",
 	Long: `Open an interactive bash/shell session directly to the running application container.
 This allows you to inspect the container environment, run commands, and debug issues interactively.`,
-	RunE: runShell,
+	RunE: withTimer(runShell),
 }
 
 func init() {

@@ -25,7 +25,7 @@ This command updates:
 
 Note: You must ensure your DNS records point to the server.`,
 	Args: cobra.ExactArgs(1),
-	RunE: runDomain,
+	RunE: withTimer(runDomain),
 }
 
 var domainForce bool

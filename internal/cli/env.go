@@ -30,7 +30,7 @@ This will update the .env file on the server and restart the application to appl
 Example:
   mushak env set DB_HOST=localhost DB_PORT=5432`,
 	Args: cobra.MinimumNArgs(1),
-	RunE: runEnvSet,
+	RunE: withTimer(runEnvSet),
 }
 
 var envPushCmd = &cobra.Command{
@@ -42,7 +42,7 @@ If no file is specified, automatically detects and uses .env.prod, .env.producti
 Example:
   mushak env push                    # Auto-detect and upload
   mushak env push .env.production    # Upload specific file`,
-	RunE: runEnvPush,
+	RunE: withTimer(runEnvPush),
 }
 
 var envPullCmd = &cobra.Command{
@@ -52,7 +52,7 @@ var envPullCmd = &cobra.Command{
 
 Example:
   mushak env pull`,
-	RunE: runEnvPull,
+	RunE: withTimer(runEnvPull),
 }
 
 var envDiffCmd = &cobra.Command{
@@ -62,7 +62,7 @@ var envDiffCmd = &cobra.Command{
 
 Example:
   mushak env diff`,
-	RunE: runEnvDiff,
+	RunE: withTimer(runEnvDiff),
 }
 
 func init() {

@@ -39,6 +39,7 @@ while read oldrev newrev refname; do
 
     # Paths
     DEPLOY_DIR="/var/www/$APP_NAME/$SHA"
+    CURRENT_LINK="/var/www/$APP_NAME/current"
     PROJECT_NAME="mushak-$APP_NAME-$SHA"
 
     # Function to sanitize docker-compose.yml (remove hardcoded ports)
@@ -112,6 +113,9 @@ while read oldrev newrev refname; do
     GIT_WORK_TREE=$DEPLOY_DIR git checkout -f $newrev
 
     cd $DEPLOY_DIR
+
+    # Update stable symlink (used for infrastructure services consistency)
+    ln -snf "$DEPLOY_DIR" "$CURRENT_LINK"
 
     # Copy environment file (try .env.prod first, then .env)
     if [ -f "/var/www/$APP_NAME/.env.prod" ]; then
@@ -315,8 +319,9 @@ EOF
             
             # Deploy infra services using the INFRA project name
             # This ensures they persist across deployments and don't get recreated unless changed
+            # We use --project-directory with a stable symlink to prevent recreation when the SHA directory changes
             for infra_svc in $INFRA_SERVICES; do
-                 docker compose -p $INFRA_PROJECT_NAME -f $COMPOSE_FILE -f docker-compose.override.yml up -d --remove-orphans $infra_svc
+                 docker compose --project-directory "$CURRENT_LINK" -p $INFRA_PROJECT_NAME -f $COMPOSE_FILE -f docker-compose.override.yml up -d --remove-orphans $infra_svc
             done
         fi
 

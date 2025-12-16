@@ -21,7 +21,7 @@ var logsCmd = &cobra.Command{
 	Short: "Stream logs from the application",
 	Long: `Logs streams the standard output and error from the running application container.
 By default, it streams logs from the currently deployed version.`,
-	RunE: runLogs,
+	RunE: withTimer(runLogs),
 }
 
 func init() {
