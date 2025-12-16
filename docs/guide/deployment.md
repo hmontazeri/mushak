@@ -20,6 +20,14 @@ The standard workflow is:
 > [!TIP]
 > You don't need to push to GitHub/GitLab first. `mushak deploy` pushes directly to your private server.
 
+## Resolving Build Issues
+
+If you encounter issues where changes aren't reflecting or an old dependency is stuck, you can force a clean build without using the Docker cache:
+
+```bash
+mushak deploy --no-cache
+```
+
 ## Deploying Multiple Apps
 
 Mushak shines at hosting multiple isolated apps on a single affordable VPS. Every app is sandboxed.

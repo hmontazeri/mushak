@@ -105,7 +105,7 @@ func runDomain(cmd *cobra.Command, args []string) error {
 
 	// Update post-receive hook
 	ui.PrintInfo("Updating deployment hook...")
-	hookScript := hooks.GeneratePostReceiveHook(cfg.AppName, newDomain, cfg.Branch)
+	hookScript := hooks.GeneratePostReceiveHook(cfg.AppName, newDomain, cfg.Branch, false)
 	if err := server.InstallPostReceiveHook(executor, cfg.AppName, hookScript); err != nil {
 		return fmt.Errorf("failed to install post-receive hook: %w", err)
 	}

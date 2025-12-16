@@ -44,6 +44,7 @@ mushak deploy [flags]
 
 **Flags:**
 - `--force`, `-f`: Force push to the git remote. Useful if history diverged.
+- `--no-cache`: Force a rebuild of the application without using usage of Docker cache.
 - `--branch`: Deploy a specific local branch instead of the current one.
 
 ## mushak env
