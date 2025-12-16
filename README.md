@@ -6,10 +6,10 @@ Mushak is a CLI tool that brings PaaS-like deployment experience to your own Lin
 
 ## Why Mushak?
 
-I absolutly love Docker and Docker Compose. But it has 2 big issues:
+I absolutly love Docker and Docker Compose. I just wish it was easy to deploy it to a remote server. But there are 2 issues when it comes to remote deployment:
 
 1. You need script or some kind of automation to get docker compose up and running on a remote server and then configure env. etc. 
-2. You will face downtime with when redeployen a new version of your app. 
+2. You will face downtime when redeployen a new version of your app. 
 
 These 2 isses is why Mushak exists. It is a zero-config, zero-downtime alternative to self hosted PaaS you find on the market. 
 
