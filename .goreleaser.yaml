@@ -1,0 +1,51 @@
+version: 2
+project_name: mushak
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X github.com/hmontazeri/mushak/pkg/version.Version={{.Version}}
+
+archives:
+  - format: tar.gz
+    # this name template makes the release artifacts follow the standard convention
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    # use zip for windows
+    format_overrides:
+    - goos: windows
+      format: zip
+    wrap_in_directory: false
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  version_template: "{{ .Tag }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+
+# The release section configures how the release is created on GitHub
+release:
+  github:
+    owner: hmontazeri
+    name: mushak
+  draft: false
+  prerelease: auto
