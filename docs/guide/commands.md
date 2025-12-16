@@ -121,6 +121,25 @@ mushak env diff
 # ≠ API_KEY (values differ)
 ```
 
+## mushak domain
+
+Update the domain name for the deployed application. This command updates the local configuration, the running Caddy configuration on the server (immediate effect), and the deployment hook for future deployments.
+
+The command will prompt for confirmation that you have updated your DNS records. You can skip this prompt with the `--force` flag.
+
+```bash
+mushak domain [NEW_DOMAIN] [flags]
+```
+
+**Example:**
+
+```bash
+mushak domain new-app.example.com
+```
+
+**Flags:**
+- `--force`, `-f`: Skip DNS confirmation prompt.
+
 ## mushak destroy
 
 Completely removes an application from the server. **Destructive action.**
