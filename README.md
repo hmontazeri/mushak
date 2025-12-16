@@ -35,11 +35,11 @@ So its basically GIT + Caddy + Docker (Compose) = Mushak.
 
 ## Installation
 
-### macOS (Homebrew)
+### Quick Install (macOS & Linux)
 
 ```bash
-# Coming soon
-brew install mushak
+# Install via curl
+curl -sL https://raw.githubusercontent.com/hmontazeri/mushak/main/install.sh | sh
 ```
 
 ### From Source
