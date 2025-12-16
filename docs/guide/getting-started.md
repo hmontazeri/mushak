@@ -14,6 +14,14 @@ Before installing Mushak, ensure you have:
 
 ## Installation
 
+### Quick Install (macOS & Linux)
+
+The easiest way to install Mushak is via the installation script, which downloads the latest release for your platform:
+
+```bash
+curl -sL https://raw.githubusercontent.com/hmontazeri/mushak/main/install.sh | sh
+```
+
 ### macOS (Homebrew)
 
 > [!NOTE]
@@ -42,21 +50,8 @@ sudo mv mushak /usr/local/bin/
 
 ## First Deployment
 
-### 1. SSH Setup (Optional)
 
-If you're using a non-default SSH key (not `~/.ssh/id_rsa`), add it to your SSH agent:
-
-```bash
-# Add your SSH key
-ssh-add ~/.ssh/id_ed25519
-
-# Verify it's added
-ssh-add -l
-```
-
-Or specify the key explicitly with the `--key` flag when running `mushak init`.
-
-### 2. Initialize
+### 1. Initialize
 Go to your project directory (which must contain a `Dockerfile` or `docker-compose.yml`).
 
 ```bash
@@ -86,7 +81,7 @@ If you have a `.env.prod` file, Mushak will detect it and ask if you want to upl
 → Upload to server? [Y/n]:
 ```
 
-### 3. Deploy
+### 2. Deploy
 Now, simply run:
 
 ```bash
@@ -102,3 +97,19 @@ Watch as your deployment happens! Mushak will:
 
 ### 3. Verify
 Visit `https://myapp.com`. Your site should be live with a secure HTTPS certificate provisioned automatically by Caddy.
+
+## Troubleshooting
+
+### SSH Setup
+
+If you're using a non-default SSH key (not `~/.ssh/id_rsa`), add it to your SSH agent:
+
+```bash
+# Add your SSH key
+ssh-add ~/.ssh/id_ed25519
+
+# Verify it's added
+ssh-add -l
+```
+
+Or specify the key explicitly with the `--key` flag when running `mushak init`.
