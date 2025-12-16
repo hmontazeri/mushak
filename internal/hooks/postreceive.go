@@ -337,10 +337,22 @@ EOF
             echo "  Building and deploying application services..."
             # Use --no-deps to prevent Docker from trying to interact with the infra services in THIS project scope
             # (since they are now managed by the infra project)
-            docker compose -p $PROJECT_NAME up -d --build $BUILD_OPTS --no-deps $APP_SERVICES
+            # Explicitly build first if build opts are present (e.g. --no-cache)
+            # 'up --build' doesn't support --no-cache so we handle it separately
+            if [[ "$BUILD_OPTS" == *"--no-cache"* ]]; then
+                docker compose -p $PROJECT_NAME build $BUILD_OPTS $APP_SERVICES
+                docker compose -p $PROJECT_NAME up -d --no-deps $APP_SERVICES
+            else
+                docker compose -p $PROJECT_NAME up -d --build $BUILD_OPTS --no-deps $APP_SERVICES
+            fi
         else
             # Fallback: deploy everything if we couldn't categorize
-            docker compose -p $PROJECT_NAME up -d --build $BUILD_OPTS
+            if [[ "$BUILD_OPTS" == *"--no-cache"* ]]; then
+                docker compose -p $PROJECT_NAME build $BUILD_OPTS
+                docker compose -p $PROJECT_NAME up -d
+            else
+                docker compose -p $PROJECT_NAME up -d --build $BUILD_OPTS
+            fi
         fi
     else
         # Dockerfile
