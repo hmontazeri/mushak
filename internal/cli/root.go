@@ -6,8 +6,8 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:   "mushak",
-	Short: "Zero-config, zero-downtime deployments to Ubuntu servers",
-	Long: `Mushak is a CLI tool that enables PaaS-like deployments to your own Ubuntu server.
+	Short: "Zero-config, zero-downtime deployments to Linux servers",
+	Long: `Mushak is a CLI tool that enables PaaS-like deployments to your own Linux server.
 It uses Git push deployments with automatic Docker builds, health checks, and zero-downtime
 switching via Caddy reverse proxy.`,
 }
