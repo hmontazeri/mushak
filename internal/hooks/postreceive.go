@@ -41,6 +41,49 @@ while read oldrev newrev refname; do
     DEPLOY_DIR="/var/www/$APP_NAME/$SHA"
     PROJECT_NAME="mushak-$APP_NAME-$SHA"
 
+    # Function to sanitize docker-compose.yml (remove hardcoded ports)
+    sanitize_docker_compose() {
+        local file=$1
+        if [ -f "$file" ]; then
+            # Check if ports are defined
+            if grep -q "^[[:space:]]*ports:" "$file"; then
+                echo "→ WARN: Removing hardcoded 'ports' from $file to prevent conflicts..."
+                cp "$file" "${file}.bak"
+                
+                # awk script to comment out ports section
+                awk '
+                /^[[:space:]]*ports:/ {
+                    # Capture indentation length
+                    match($0, /^[[:space:]]*/)
+                    current_indent = RLENGTH
+                    in_ports = 1
+                    print "# " $0 " (commented by Mushak)"
+                    next
+                }
+                in_ports {
+                    # Pass through empty lines
+                    if ($0 ~ /^[[:space:]]*$/) {
+                        print
+                        next
+                    }
+                    
+                    # Check indentation
+                    match($0, /^[[:space:]]*/)
+                    this_indent = RLENGTH
+                    
+                    if (this_indent > current_indent) {
+                        print "# " $0
+                        next
+                    } else {
+                        in_ports = 0
+                    }
+                }
+                { print }
+                ' "${file}.bak" > "$file"
+            fi
+        fi
+    }
+
     echo ""
     echo "→ Finding available port..."
 
@@ -82,6 +125,10 @@ while read oldrev newrev refname; do
     else
         echo "⚠ No .env.prod or .env file found. Use 'mushak env set' to configure environment variables."
     fi
+
+    # Sanitize docker-compose files to remove hardcoded ports
+    sanitize_docker_compose "docker-compose.yml"
+    sanitize_docker_compose "docker-compose.yaml"
 
     echo ""
     echo "→ Reading configuration..."
