@@ -138,16 +138,40 @@ while read oldrev newrev refname; do
             echo "  Service name: $SERVICE_NAME (using first service - no 'web' service found)"
         fi
 
-        # Create override file with port mapping
+        # Create override file with port mapping and container name overrides
+        # Override container_name for ALL services to enable zero-downtime deployments
+        # Infrastructure services get static names, app services get versioned names
+
         cat > docker-compose.override.yml <<EOF
 version: '3'
 services:
   $SERVICE_NAME:
+    container_name: ${PROJECT_NAME}-${SERVICE_NAME}
     ports:
       - "$HOST_PORT:$INTERNAL_PORT"
 EOF
 
+        # Add container_name overrides for other application services
+        # This prevents conflicts and enables zero-downtime
+        for app_svc in $APP_SERVICES; do
+            if [ "$app_svc" != "$SERVICE_NAME" ]; then
+                cat >> docker-compose.override.yml <<EOF
+  $app_svc:
+    container_name: ${PROJECT_NAME}-${app_svc}
+EOF
+            fi
+        done
+
+        # Keep infrastructure services with static names (app-specific, not versioned)
+        for infra_svc in $INFRA_SERVICES; do
+            cat >> docker-compose.override.yml <<EOF
+  $infra_svc:
+    container_name: ${APP_NAME}_${infra_svc}
+EOF
+        done
+
         echo "  Created docker-compose.override.yml"
+        echo "    - Overriding container names for zero-downtime deployments"
 
     elif [ -f "Dockerfile" ]; then
         echo "  Found Dockerfile"
@@ -199,33 +223,8 @@ EOF
         echo "  Infrastructure services: ${INFRA_SERVICES:-none}"
         echo "  Application services: ${APP_SERVICES:-all}"
 
-        # Check if docker-compose has custom container names
-        HAS_CUSTOM_NAMES=$(grep -E "^\s*container_name:" docker-compose.yml docker-compose.yaml 2>/dev/null || true)
-
-        if [ -n "$HAS_CUSTOM_NAMES" ]; then
-            echo "  ⚠ Warning: Custom container_name detected."
-            echo "  Stopping previous application containers..."
-
-            # Only stop application services, keep infrastructure running
-            docker ps -a --format "{{.Names}}" | grep -E "^(mushak-)?${APP_NAME}[_-]" | while read container; do
-                # Check if this container is infrastructure (by checking if name contains infra service names)
-                IS_INFRA=0
-                for infra_svc in $INFRA_SERVICES; do
-                    if echo "$container" | grep -q "$infra_svc"; then
-                        IS_INFRA=1
-                        break
-                    fi
-                done
-
-                if [ $IS_INFRA -eq 0 ]; then
-                    echo "    Stopping $container"
-                    docker stop $container 2>/dev/null || true
-                    docker rm $container 2>/dev/null || true
-                else
-                    echo "    Keeping $container (infrastructure)"
-                fi
-            done
-        fi
+        # Note: Mushak automatically overrides container_name in docker-compose.override.yml
+        # This enables zero-downtime deployments even if you have custom names
 
         # Start infrastructure services first if not running
         if [ -n "$INFRA_SERVICES" ]; then

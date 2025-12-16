@@ -13,7 +13,11 @@ When you run `mushak deploy`, the following sequence occurs:
     *   Mushak copies `.env.prod` (or `.env` as fallback) from `/var/www/<app>/.env.prod` to the deployment directory.
     *   All services in docker-compose can access these variables.
 5.  **Build**:
-    *   For `docker-compose.yml`: Detects the web service (services with "web" in the name), creates a port override, and categorizes services.
+    *   For `docker-compose.yml`: Detects the web service (services with "web" in the name), creates a `docker-compose.override.yml` file with:
+        *   Port mapping for the web service (random port 8000-9000)
+        *   Container name overrides for ALL services (enables zero-downtime deployments)
+        *   Application services get versioned names: `mushak-<app>-<sha>-<service>`
+        *   Infrastructure services get static names: `<app>_<service>`
     *   Infrastructure services (databases, caches) are identified automatically by image name or via `persistent_services` in mushak.yaml.
     *   For `Dockerfile`: Runs `docker build`.
 6.  **Run**:
