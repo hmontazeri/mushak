@@ -10,6 +10,7 @@ import (
 	"github.com/hmontazeri/mushak/internal/hooks"
 	"github.com/hmontazeri/mushak/internal/server"
 	"github.com/hmontazeri/mushak/internal/ssh"
+	"github.com/hmontazeri/mushak/internal/ui"
 	"github.com/hmontazeri/mushak/internal/utils"
 	"github.com/spf13/cobra"
 )
@@ -89,13 +90,13 @@ func runEnvSet(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to load config: %w\nHave you run 'mushak init'?", err)
 	}
 
-	fmt.Println("\n=== Mushak Env Set ===")
-	fmt.Printf("Server: %s@%s\n", cfg.User, cfg.Host)
-	fmt.Printf("App: %s\n", cfg.AppName)
-	fmt.Println()
+	ui.PrintHeader("Mushak Env Set")
+	ui.PrintKeyValue("Server", fmt.Sprintf("%s@%s", cfg.User, cfg.Host))
+	ui.PrintKeyValue("App", cfg.AppName)
+	println()
 
 	// Connect SSH
-	fmt.Println("→ Connecting to server...")
+	ui.PrintInfo("Connecting to server...")
 	client, err := ssh.NewClient(ssh.Config{
 		Host: cfg.Host,
 		User: cfg.User,
@@ -109,7 +110,7 @@ func runEnvSet(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to connect to server: %w", err)
 	}
 	defer client.Close()
-	fmt.Println("✓ Connected to server")
+	ui.PrintSuccess("Connected to server")
 
 	executor := ssh.NewExecutor(client)
 
@@ -124,36 +125,36 @@ func runEnvSet(cmd *cobra.Command, args []string) error {
 	if out, err := executor.Run("cat " + envProdPath); err == nil {
 		currentContent = out
 		targetPath = envProdPath
-		fmt.Println("  Using existing .env.prod")
+		ui.PrintInfo("Using existing .env.prod")
 	} else if out, err := executor.Run("cat " + envPath); err == nil {
 		currentContent = out
 		targetPath = envPath
-		fmt.Println("  Using existing .env")
+		ui.PrintInfo("Using existing .env")
 	} else {
 		// Neither exists, create .env.prod by default
 		targetPath = envProdPath
-		fmt.Println("  Creating new .env.prod")
+		ui.PrintInfo("Creating new .env.prod")
 	}
 
 	newContent := updateEnvFile(currentContent, updates)
 
 	// Write back
-	fmt.Println("→ Updating environment file...")
+	ui.PrintInfo("Updating environment file...")
 	if err := executor.WriteFileSudo(targetPath, newContent); err != nil {
 		return fmt.Errorf("failed to write environment file: %w", err)
 	}
-	fmt.Printf("✓ Updated %s\n", targetPath)
+	ui.PrintSuccess(fmt.Sprintf("Updated %s", targetPath))
 
 	// Update deployment hook (to ensure it supports .env)
-	fmt.Println("→ Updating deployment hook...")
+	ui.PrintInfo("Updating deployment hook...")
 	hookScript := hooks.GeneratePostReceiveHook(cfg.AppName, cfg.Domain, cfg.Branch)
 	if err := server.InstallPostReceiveHook(executor, cfg.AppName, hookScript); err != nil {
 		return fmt.Errorf("failed to update hook: %w", err)
 	}
-	fmt.Println("✓ Updated deployment hook")
+	ui.PrintSuccess("Updated deployment hook")
 
 	// Trigger Redeploy
-	fmt.Println("→ Triggering redeploy...")
+	ui.PrintInfo("Triggering redeploy...")
 	
 	// Get SHA of current HEAD on server
 	shaCmd := fmt.Sprintf("git --git-dir=/var/repo/%s.git rev-parse HEAD", cfg.AppName)
@@ -271,11 +272,11 @@ func runEnvPush(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to load config: %w\nHave you run 'mushak init'?", err)
 	}
 
-	fmt.Println("\n=== Mushak Env Push ===")
-	fmt.Printf("Server: %s@%s\n", cfg.User, cfg.Host)
-	fmt.Printf("App: %s\n", cfg.AppName)
-	fmt.Printf("Local file: %s\n", envFile)
-	fmt.Println()
+	ui.PrintHeader("Mushak Env Push")
+	ui.PrintKeyValue("Server", fmt.Sprintf("%s@%s", cfg.User, cfg.Host))
+	ui.PrintKeyValue("App", cfg.AppName)
+	ui.PrintKeyValue("Local file", envFile)
+	println()
 
 	// Read file
 	content, err := os.ReadFile(envFile)
@@ -285,7 +286,7 @@ func runEnvPush(cmd *cobra.Command, args []string) error {
 
 	// Show preview
 	count, _ := utils.CountEnvVars(envFile)
-	fmt.Printf("→ Uploading %d variable%s...\n", count, pluralizeEnv(count))
+	ui.PrintInfo(fmt.Sprintf("Uploading %d variable%s...", count, pluralizeEnv(count)))
 
 	// Connect SSH
 	client, err := ssh.NewClient(ssh.Config{
@@ -316,10 +317,10 @@ func runEnvPush(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to upload: %w", err)
 	}
 
-	fmt.Println("✓ Environment file uploaded")
-	fmt.Printf("  Target: %s\n", targetPath)
-	fmt.Println()
-	fmt.Println("Run 'mushak deploy' to apply changes")
+	ui.PrintSuccess("Environment file uploaded")
+	ui.PrintKeyValue("Target", targetPath)
+	println()
+	ui.PrintInfo("Run 'mushak deploy' to apply changes")
 
 	return nil
 }
@@ -331,10 +332,10 @@ func runEnvPull(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to load config: %w\nHave you run 'mushak init'?", err)
 	}
 
-	fmt.Println("\n=== Mushak Env Pull ===")
-	fmt.Printf("Server: %s@%s\n", cfg.User, cfg.Host)
-	fmt.Printf("App: %s\n", cfg.AppName)
-	fmt.Println()
+	ui.PrintHeader("Mushak Env Pull")
+	ui.PrintKeyValue("Server", fmt.Sprintf("%s@%s", cfg.User, cfg.Host))
+	ui.PrintKeyValue("App", cfg.AppName)
+	println()
 
 	// Connect SSH
 	client, err := ssh.NewClient(ssh.Config{
@@ -369,7 +370,7 @@ func runEnvPull(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("no environment file found on server")
 	}
 
-	fmt.Printf("→ Downloading from %s...\n", sourcePath)
+	ui.PrintInfo(fmt.Sprintf("Downloading from %s...", sourcePath))
 
 	// Write to local .env.prod
 	localPath := ".env.prod"
@@ -378,7 +379,7 @@ func runEnvPull(cmd *cobra.Command, args []string) error {
 	}
 
 	count, _ := utils.CountEnvVars(localPath)
-	fmt.Printf("✓ Downloaded %d variable%s to %s\n", count, pluralizeEnv(count), localPath)
+	ui.PrintSuccess(fmt.Sprintf("Downloaded %d variable%s to %s", count, pluralizeEnv(count), localPath))
 
 	return nil
 }
@@ -396,10 +397,10 @@ func runEnvDiff(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to load config: %w\nHave you run 'mushak init'?", err)
 	}
 
-	fmt.Println("\n=== Mushak Env Diff ===")
-	fmt.Printf("Local: %s\n", localFile)
-	fmt.Printf("Server: %s@%s (%s)\n", cfg.User, cfg.Host, cfg.AppName)
-	fmt.Println()
+	ui.PrintHeader("Mushak Env Diff")
+	ui.PrintKeyValue("Local", localFile)
+	ui.PrintKeyValue("Server", fmt.Sprintf("%s@%s (%s)", cfg.User, cfg.Host, cfg.AppName))
+	println()
 
 	// Read local
 	localVars, err := utils.ParseEnvFile(localFile)
@@ -470,23 +471,23 @@ func runEnvDiff(cmd *cobra.Command, args []string) error {
 		remoteVal, remoteExists := remoteVars[key]
 
 		if !remoteExists {
-			fmt.Printf("+ %s (only in local)\n", key)
+			fmt.Println(ui.Success(fmt.Sprintf("+ %s (only in local)", key)))
 			hasChanges = true
 		} else if !localExists {
-			fmt.Printf("- %s (only on server)\n", key)
+			fmt.Println(ui.Error(fmt.Sprintf("- %s (only on server)", key)))
 			hasChanges = true
 		} else if localVal != remoteVal {
-			fmt.Printf("≠ %s (values differ)\n", key)
+			fmt.Println(ui.Warning(fmt.Sprintf("≠ %s (values differ)", key)))
 			hasChanges = true
 		}
 	}
 
 	if !hasChanges {
-		fmt.Println("✓ No differences found")
+		ui.PrintSuccess("No differences found")
 	} else {
-		fmt.Println()
-		fmt.Println("Use 'mushak env push' to upload local changes")
-		fmt.Println("Use 'mushak env pull' to download server version")
+		println()
+		ui.PrintInfo("Use 'mushak env push' to upload local changes")
+		ui.PrintInfo("Use 'mushak env pull' to download server version")
 	}
 
 	return nil

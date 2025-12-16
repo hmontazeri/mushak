@@ -138,85 +138,6 @@ while read oldrev newrev refname; do
             echo "  Service name: $SERVICE_NAME (using first service - no 'web' service found)"
         fi
 
-        # Create override file with port mapping and container name overrides
-        # Override container_name for ALL services to enable zero-downtime deployments
-        # Infrastructure services get static names, app services get versioned names
-
-        CONTAINER_NAME="${PROJECT_NAME}-${SERVICE_NAME}-1"
-        INFRA_PROJECT_NAME="mushak-${APP_NAME}-infra"
-        NETWORK_NAME="mushak-${APP_NAME}-net"
-
-        # Create shared network if it doesn't exist
-        docker network create $NETWORK_NAME 2>/dev/null || true
-
-        # Create override file with port mapping, container name overrides, and network configuration
-        # Override container_name for ALL services to enable zero-downtime deployments
-        # Infrastructure services get static names, app services get versioned names
-
-        cat > docker-compose.override.yml <<EOF
-version: '3'
-networks:
-  default:
-    external: true
-    name: $NETWORK_NAME
-services:
-  $SERVICE_NAME:
-    container_name: ${PROJECT_NAME}-${SERVICE_NAME}
-    ports:
-      - "$HOST_PORT:$INTERNAL_PORT"
-EOF
-
-        # Add container_name overrides for other application services
-        # This prevents conflicts and enables zero-downtime
-        for app_svc in $APP_SERVICES; do
-            if [ "$app_svc" != "$SERVICE_NAME" ]; then
-                cat >> docker-compose.override.yml <<EOF
-  $app_svc:
-    container_name: ${PROJECT_NAME}-${app_svc}
-EOF
-            fi
-        done
-
-        # Configure external_links for application services to reach infrastructure services
-        # This allows app services to find infra services by their service name (hostname aliasing)
-        if [ -n "$INFRA_SERVICES" ]; then
-            for app_svc in $APP_SERVICES; do
-                echo "    external_links:" >> docker-compose.override.yml
-                for infra_svc in $INFRA_SERVICES; do
-                    # Map static container name to service name
-                    # e.g. bareagent_postgres:postgres
-                    echo "      - ${APP_NAME}_${infra_svc}:${infra_svc}" >> docker-compose.override.yml
-                done
-            done
-        fi
-
-        # Keep infrastructure services with static names (app-specific, not versioned)
-        for infra_svc in $INFRA_SERVICES; do
-            cat >> docker-compose.override.yml <<EOF
-  $infra_svc:
-    container_name: ${APP_NAME}_${infra_svc}
-EOF
-        done
-
-        echo "  Created docker-compose.override.yml"
-        echo "    - Overriding container names for zero-downtime deployments"
-        echo "    - Configuring shared network: $NETWORK_NAME"
-        if [ -n "$INFRA_SERVICES" ]; then
-            echo "    - Configuring external links for infrastructure services"
-        fi
-
-    elif [ -f "Dockerfile" ]; then
-        echo "  Found Dockerfile"
-        BUILD_METHOD="dockerfile"
-    else
-        echo "ERROR: No Dockerfile or docker-compose.yml found" >&2
-        exit 1
-    fi
-
-    echo ""
-    echo "→ Building and starting containers..."
-
-    if [ "$BUILD_METHOD" = "compose" ]; then
         # Detect infrastructure services (databases, caches, etc.) that should persist
         # These services won't be restarted on redeployments
         INFRASTRUCTURE_IMAGES="postgres|mysql|mariadb|mongodb|mongo|redis|memcached|rabbitmq|elasticsearch|timescale"
@@ -252,6 +173,84 @@ EOF
             fi
         done
 
+        # Create override file with port mapping and container name overrides
+        # Override container_name for ALL services to enable zero-downtime deployments
+        # Infrastructure services get static names, app services get versioned names
+
+        CONTAINER_NAME="${PROJECT_NAME}-${SERVICE_NAME}-1"
+        INFRA_PROJECT_NAME="mushak-${APP_NAME}-infra"
+        NETWORK_NAME="mushak-${APP_NAME}-net"
+
+        # Create shared network if it doesn't exist
+        docker network create $NETWORK_NAME 2>/dev/null || true
+
+        # Create override file with port mapping, container name overrides, and network configuration
+        # Override container_name for ALL services to enable zero-downtime deployments
+        # Infrastructure services get static names, app services get versioned names
+
+        cat > docker-compose.override.yml <<EOF
+version: '3'
+networks:
+  default:
+    external: true
+    name: $NETWORK_NAME
+services:
+EOF
+
+        # Generate configuration for all application services
+        for app_svc in $APP_SERVICES; do
+            cat >> docker-compose.override.yml <<EOF
+  $app_svc:
+    container_name: ${PROJECT_NAME}-${app_svc}
+EOF
+
+            # Add port mapping for the main web service
+            if [ "$app_svc" = "$SERVICE_NAME" ]; then
+                cat >> docker-compose.override.yml <<EOF
+    ports:
+      - "$HOST_PORT:$INTERNAL_PORT"
+EOF
+            fi
+
+            # Configure external_links for application services to reach infrastructure services
+            # This allows app services to find infra services by their service name (hostname aliasing)
+            if [ -n "$INFRA_SERVICES" ]; then
+                echo "    external_links:" >> docker-compose.override.yml
+                for infra_svc in $INFRA_SERVICES; do
+                    # Map static container name to service name
+                    # e.g. bareagent_postgres:postgres
+                    echo "      - ${APP_NAME}_${infra_svc}:${infra_svc}" >> docker-compose.override.yml
+                done
+            fi
+        done
+
+        # Keep infrastructure services with static names (app-specific, not versioned)
+        for infra_svc in $INFRA_SERVICES; do
+            cat >> docker-compose.override.yml <<EOF
+  $infra_svc:
+    container_name: ${APP_NAME}_${infra_svc}
+EOF
+        done
+
+        echo "  Created docker-compose.override.yml"
+        echo "    - Overriding container names for zero-downtime deployments"
+        echo "    - Configuring shared network: $NETWORK_NAME"
+        if [ -n "$INFRA_SERVICES" ]; then
+            echo "    - Configuring external links for infrastructure services"
+        fi
+
+    elif [ -f "Dockerfile" ]; then
+        echo "  Found Dockerfile"
+        BUILD_METHOD="dockerfile"
+    else
+        echo "ERROR: No Dockerfile or docker-compose.yml found" >&2
+        exit 1
+    fi
+
+    echo ""
+    echo "→ Building and starting containers..."
+
+    if [ "$BUILD_METHOD" = "compose" ]; then
         echo "  Infrastructure services: ${INFRA_SERVICES:-none}"
         echo "  Application services: ${APP_SERVICES:-all}"
 

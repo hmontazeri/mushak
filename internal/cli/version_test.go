@@ -2,29 +2,40 @@ package cli
 
 import (
 	"bytes"
+	"os"
 	"strings"
 	"testing"
 
-	"github.com/spf13/cobra"
+	"github.com/fatih/color"
 )
 
 func TestVersionCommand(t *testing.T) {
 	// Capture output
-	buf := new(bytes.Buffer)
+	oldStdout := os.Stdout
+	oldColorOutput := color.Output
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+	color.Output = w
 
-	// Create a new version command for testing
-	cmd := &cobra.Command{
-		Use: "version",
-		Run: func(cmd *cobra.Command, args []string) {
-			buf.WriteString("mushak version test\n")
-		},
-	}
+	// Restore output deferred
+	defer func() {
+		os.Stdout = oldStdout
+		color.Output = oldColorOutput
+	}()
 
 	// Execute command
-	cmd.Run(cmd, []string{})
+	versionCmd.Run(versionCmd, []string{})
 
+	// Close write end to read
+	w.Close()
+
+	var buf bytes.Buffer
+	if _, err := buf.ReadFrom(r); err != nil {
+		t.Fatalf("failed to read output: %v", err)
+	}
 	output := buf.String()
 
+	// ui.PrintInfo adds "→ " prefix
 	if !strings.Contains(output, "mushak version") {
 		t.Errorf("version command output should contain 'mushak version', got: %s", output)
 	}

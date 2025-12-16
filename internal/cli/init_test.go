@@ -11,8 +11,8 @@ func TestInitCommand(t *testing.T) {
 		t.Fatal("initCmd should not be nil")
 	}
 
-	if initCmd.Use != "init" {
-		t.Errorf("initCmd.Use = %v, want init", initCmd.Use)
+	if initCmd.Use != "init [USER@HOST]" {
+		t.Errorf("initCmd.Use = %v, want init [USER@HOST]", initCmd.Use)
 	}
 
 	if initCmd.Short == "" {

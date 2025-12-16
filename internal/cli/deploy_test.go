@@ -156,3 +156,24 @@ func TestDeployBranchWarning(t *testing.T) {
 		})
 	}
 }
+
+func TestPluralize(t *testing.T) {
+	tests := []struct {
+		count int
+		want  string
+	}{
+		{count: 0, want: "s"},
+		{count: 1, want: ""},
+		{count: 2, want: "s"},
+		{count: 10, want: "s"},
+	}
+
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("%d", tt.count), func(t *testing.T) {
+			got := pluralize(tt.count)
+			if got != tt.want {
+				t.Errorf("pluralize(%d) = %q, want %q", tt.count, got, tt.want)
+			}
+		})
+	}
+}
