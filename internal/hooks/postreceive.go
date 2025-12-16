@@ -142,8 +142,23 @@ while read oldrev newrev refname; do
         # Override container_name for ALL services to enable zero-downtime deployments
         # Infrastructure services get static names, app services get versioned names
 
+        CONTAINER_NAME="${PROJECT_NAME}-${SERVICE_NAME}-1"
+        INFRA_PROJECT_NAME="mushak-${APP_NAME}-infra"
+        NETWORK_NAME="mushak-${APP_NAME}-net"
+
+        # Create shared network if it doesn't exist
+        docker network create $NETWORK_NAME 2>/dev/null || true
+
+        # Create override file with port mapping, container name overrides, and network configuration
+        # Override container_name for ALL services to enable zero-downtime deployments
+        # Infrastructure services get static names, app services get versioned names
+
         cat > docker-compose.override.yml <<EOF
 version: '3'
+networks:
+  default:
+    external: true
+    name: $NETWORK_NAME
 services:
   $SERVICE_NAME:
     container_name: ${PROJECT_NAME}-${SERVICE_NAME}
@@ -162,6 +177,19 @@ EOF
             fi
         done
 
+        # Configure external_links for application services to reach infrastructure services
+        # This allows app services to find infra services by their service name (hostname aliasing)
+        if [ -n "$INFRA_SERVICES" ]; then
+            for app_svc in $APP_SERVICES; do
+                echo "    external_links:" >> docker-compose.override.yml
+                for infra_svc in $INFRA_SERVICES; do
+                    # Map static container name to service name
+                    # e.g. bareagent_postgres:postgres
+                    echo "      - ${APP_NAME}_${infra_svc}:${infra_svc}" >> docker-compose.override.yml
+                done
+            done
+        fi
+
         # Keep infrastructure services with static names (app-specific, not versioned)
         for infra_svc in $INFRA_SERVICES; do
             cat >> docker-compose.override.yml <<EOF
@@ -172,6 +200,10 @@ EOF
 
         echo "  Created docker-compose.override.yml"
         echo "    - Overriding container names for zero-downtime deployments"
+        echo "    - Configuring shared network: $NETWORK_NAME"
+        if [ -n "$INFRA_SERVICES" ]; then
+            echo "    - Configuring external links for infrastructure services"
+        fi
 
     elif [ -f "Dockerfile" ]; then
         echo "  Found Dockerfile"
@@ -227,23 +259,32 @@ EOF
         # This enables zero-downtime deployments even if you have custom names
 
         # Start infrastructure services first if not running
+        # We use a SEPARATE persistent project for infrastructure to avoid conflicts with versioned app deployments
         if [ -n "$INFRA_SERVICES" ]; then
             echo "  Ensuring infrastructure services are running..."
+
+            # We need a separate override file for infra to use the correct network but NOT the versioned container names
+            # Actually, we can reuse the generated override file because it has the static names for infra services!
+            # But we need to be careful not to start app services here.
+            
+            # Deploy infra services using the INFRA project name
+            # This ensures they persist across deployments and don't get recreated unless changed
             for infra_svc in $INFRA_SERVICES; do
-                docker compose -p $PROJECT_NAME up -d --no-build $infra_svc 2>/dev/null || true
+                 docker compose -p $INFRA_PROJECT_NAME -f $COMPOSE_FILE -f docker-compose.override.yml up -d --remove-orphans $infra_svc
             done
         fi
 
         # Build and deploy application services only
+        # We use the SHA-versioned project name for zero-downtime updates
         if [ -n "$APP_SERVICES" ]; then
             echo "  Building and deploying application services..."
-            docker compose -p $PROJECT_NAME up -d --build $APP_SERVICES
+            # Use --no-deps to prevent Docker from trying to interact with the infra services in THIS project scope
+            # (since they are now managed by the infra project)
+            docker compose -p $PROJECT_NAME up -d --build --no-deps $APP_SERVICES
         else
             # Fallback: deploy everything if we couldn't categorize
             docker compose -p $PROJECT_NAME up -d --build
         fi
-
-        CONTAINER_NAME="${PROJECT_NAME}-${SERVICE_NAME}-1"
     else
         # Dockerfile
         docker build -t $PROJECT_NAME .

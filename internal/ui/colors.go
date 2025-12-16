@@ -37,7 +37,7 @@ const ASCIIArt = `
 func PrintBanner() {
 	cyan := color.New(color.FgCyan)
 	cyan.Println(ASCIIArt)
-	color.New(color.FgHiBlack).Println("    Zero-Config, Zero-Downtime deployments to your Linux server")
+	color.New(color.FgHiBlack).Println("    Zero-config, zero-downtime deployments to your Linux server")
 	println()
 }
 

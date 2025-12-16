@@ -216,6 +216,30 @@ func TestGeneratePostReceiveHook_Cleanup(t *testing.T) {
 	}
 }
 
+func TestGeneratePostReceiveHook_NetworkAndInfra(t *testing.T) {
+	script := GeneratePostReceiveHook("app", "app.com", "main")
+
+	expectedElements := []string{
+		"mushak-${APP_NAME}-net",
+		"docker network create",
+		"external: true",
+		"mushak-${APP_NAME}-infra",
+		"--no-deps",
+		"external_links:",
+		"${APP_NAME}_${infra_svc}:${infra_svc}",
+	}
+
+	// This test assumes detailed knowledge of how internal variables are set in the script
+	// Ideally we would mock the docker-compose.yml presence and content, but since we are just checking string generation:
+	
+	// We check for the presence of the logic blocks
+	for _, element := range expectedElements {
+		if !strings.Contains(script, element) {
+			t.Errorf("Script missing network/infra element: %q", element)
+		}
+	}
+}
+
 func TestGeneratePostReceiveHook_BranchFiltering(t *testing.T) {
 	script := GeneratePostReceiveHook("app", "app.com", "production")
 
