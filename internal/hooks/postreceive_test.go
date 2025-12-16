@@ -58,7 +58,7 @@ func TestGeneratePostReceiveHook(t *testing.T) {
 			noCache: true,
 			contains: []string{
 				"BUILD_OPTS=\"--no-cache\"",
-				"docker compose -p $PROJECT_NAME up -d --build $BUILD_OPTS",
+				"docker compose -p $PROJECT_NAME build $BUILD_OPTS",
 				"docker build $BUILD_OPTS -t $PROJECT_NAME .",
 			},
 		},
