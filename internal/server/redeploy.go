@@ -27,8 +27,8 @@ func TriggerRedeploy(executor *ssh.Executor, cfg *config.DeployConfig) error {
 	// Trigger hook
 	// We need to run it as the user, but referencing the script which is chmod +x
 	redeployCmd := fmt.Sprintf(
-		"echo \"%s %s refs/heads/%s\" | /var/repo/%s.git/hooks/post-receive",
-		sha, sha, cfg.Branch, cfg.AppName,
+		"echo \"%s %s refs/heads/%s\" | GIT_DIR=/var/repo/%s.git /var/repo/%s.git/hooks/post-receive",
+		sha, sha, cfg.Branch, cfg.AppName, cfg.AppName,
 	)
 
 	fmt.Println("----------------------------------------")
