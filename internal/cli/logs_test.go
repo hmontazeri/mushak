@@ -63,6 +63,16 @@ func TestLogsCommandFlags(t *testing.T) {
 	if keyFlag == nil {
 		t.Error("logs command should have --key flag")
 	}
+
+	// Check container flag
+	containerFlag := logsCmd.Flags().Lookup("container")
+	if containerFlag == nil {
+		t.Error("logs command should have --container flag")
+	} else {
+		if containerFlag.Shorthand != "c" {
+			t.Errorf("container flag shorthand = %v, want c", containerFlag.Shorthand)
+		}
+	}
 }
 
 func TestLogsCommandDescription(t *testing.T) {

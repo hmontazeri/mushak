@@ -77,8 +77,11 @@ mushak env set DB_HOST=db.example.com API_KEY=secret123 DATABASE_PASSWORD=mysecr
 Uploads your local environment file to the server. Auto-detects `.env.prod`, `.env.production`, or `.env` in that order, or you can specify a file explicitly.
 
 ```bash
-mushak env push [file]
+mushak env push [file] [flags]
 ```
+
+**Flags:**
+- `--deploy`, `-d`: Trigger a redeployment after uploading the file.
 
 **Examples:**
 
@@ -88,6 +91,9 @@ mushak env push
 
 # Upload specific file
 mushak env push .env.production
+
+# Upload and immediately redeploy
+mushak env push --deploy
 ```
 
 ### mushak env pull
@@ -164,7 +170,34 @@ mushak logs [flags]
 **Flags:**
 - `--tail`, `-n`: Number of lines to show (default "100").
 - `--follow`, `-f`: Follow log output (default true).
+- `--container`, `-c`: Filter logs by container name (use `mushak containers` to list available names).
 - `--key`: Path to SSH key (default `~/.ssh/id_rsa`).
+
+## mushak containers
+
+List all running Docker containers for the application. Useful to discover container names for use with `mushak logs --container`.
+
+```bash
+mushak containers
+```
+
+**Example:**
+
+```bash
+mushak containers
+# Output:
+# NAMES                              STATUS          PORTS
+# mushak-myapp-abc123-web            Up 2 hours      0.0.0.0:8080->80/tcp
+# myapp_postgres                     Up 3 days       5432/tcp
+```
+
+## mushak redeploy
+
+Trigger a redeployment of the current version on the server. Useful for restarting the application or applying environment changes without pushing new code.
+
+```bash
+mushak redeploy
+```
 
 ## mushak shell
 

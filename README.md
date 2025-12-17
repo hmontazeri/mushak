@@ -180,6 +180,22 @@ Show the current version.
 mushak version
 ```
 
+### `mushak redeploy`
+
+Trigger a redeployment of the current version.
+
+```bash
+mushak redeploy
+```
+
+### `mushak containers`
+
+List running containers for the application.
+
+```bash
+mushak containers
+```
+
 ### `mushak logs`
 
 Stream logs from your application.
@@ -191,6 +207,7 @@ mushak logs
 **Flags:**
 - `-f, --follow`: Follow log output
 - `-n, --lines`: Number of lines to show (default: 100)
+- `-c, --container`: Filter logs by container name
 
 ### `mushak exec`
 
@@ -219,6 +236,7 @@ mushak env set DATABASE_PASSWORD=secret RAILS_MASTER_KEY=abc123
 # Upload entire .env file
 mushak env push              # Auto-detects .env.prod, .env.production, or .env
 mushak env push .env.prod    # Upload specific file
+mushak env push --deploy     # Upload and immediately redeploy
 
 # Download from server
 mushak env pull              # Downloads to local .env.prod

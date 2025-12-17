@@ -65,13 +65,18 @@ Example:
 	RunE: withTimer(runEnvDiff),
 }
 
+var envPushDeploy bool
+	
 func init() {
 	rootCmd.AddCommand(envCmd)
 	envCmd.AddCommand(envSetCmd)
 	envCmd.AddCommand(envPushCmd)
 	envCmd.AddCommand(envPullCmd)
 	envCmd.AddCommand(envDiffCmd)
+
+	envPushCmd.Flags().BoolVarP(&envPushDeploy, "deploy", "d", false, "Trigger a redeployment after pushing environment file")
 }
+
 
 func runEnvSet(cmd *cobra.Command, args []string) error {
 	// Parse input args into map
@@ -155,32 +160,9 @@ func runEnvSet(cmd *cobra.Command, args []string) error {
 
 	// Trigger Redeploy
 	ui.PrintInfo("Triggering redeploy...")
-	
-	// Get SHA of current HEAD on server
-	shaCmd := fmt.Sprintf("git --git-dir=/var/repo/%s.git rev-parse HEAD", cfg.AppName)
-	sha, err := executor.Run(shaCmd)
-	if err != nil {
-		return fmt.Errorf("failed to get current deployed SHA: %w", err)
+	if err := server.TriggerRedeploy(executor, cfg); err != nil {
+		return err
 	}
-	sha = strings.TrimSpace(sha)
-	
-	// In some cases git output might have newlines or other noise, be careful.
-	if len(sha) < 7 {
-		return fmt.Errorf("invalid SHA retrieved from server: %s", sha)
-	}
-
-	// Trigger hook
-	// We need to run it as the user, but referencing the script which is chmod +x
-	redeployCmd := fmt.Sprintf(
-		"echo \"%s %s refs/heads/%s\" | /var/repo/%s.git/hooks/post-receive",
-		sha, sha, cfg.Branch, cfg.AppName,
-	)
-
-	fmt.Println("----------------------------------------")
-	if err := executor.StreamRun(redeployCmd, os.Stdout, os.Stderr); err != nil {
-		return fmt.Errorf("redeploy failed: %w", err)
-	}
-	fmt.Println("----------------------------------------")
 
 	return nil
 }
@@ -320,7 +302,14 @@ func runEnvPush(cmd *cobra.Command, args []string) error {
 	ui.PrintSuccess("Environment file uploaded")
 	ui.PrintKeyValue("Target", targetPath)
 	println()
-	ui.PrintInfo("Run 'mushak deploy' to apply changes")
+
+	if envPushDeploy {
+		if err := server.TriggerRedeploy(executor, cfg); err != nil {
+			return err
+		}
+	} else {
+		ui.PrintInfo("Run 'mushak deploy' to apply changes")
+	}
 
 	return nil
 }

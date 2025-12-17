@@ -11,9 +11,10 @@ import (
 )
 
 var (
-	logsTail   string
-	logsFollow bool
-	logsKey    string
+	logsTail      string
+	logsFollow    bool
+	logsKey       string
+	logsContainer string
 )
 
 var logsCmd = &cobra.Command{
@@ -30,6 +31,7 @@ func init() {
 	logsCmd.Flags().StringVarP(&logsTail, "tail", "n", "100", "Number of lines to show from the end of the logs")
 	logsCmd.Flags().BoolVarP(&logsFollow, "follow", "f", true, "Follow log output")
 	logsCmd.Flags().StringVar(&logsKey, "key", "", "SSH key path (default: ~/.ssh/id_rsa)")
+	logsCmd.Flags().StringVarP(&logsContainer, "container", "c", "", "Filter logs by container name")
 }
 
 func runLogs(cmd *cobra.Command, args []string) error {
@@ -66,11 +68,22 @@ func runLogs(cmd *cobra.Command, args []string) error {
 	// Prioritize the web service container
 
 	patterns := []string{
-		fmt.Sprintf("mushak-%s-.*-web$", cfg.AppName),  // Mushak override naming with web service
-		fmt.Sprintf("mushak-%s-.*-web-", cfg.AppName),  // Mushak compose naming with web service
-		fmt.Sprintf("mushak-%s-", cfg.AppName),         // Any Mushak container for this app
-		fmt.Sprintf("%s[_-]web", cfg.AppName),          // Infrastructure or legacy naming with web
-		fmt.Sprintf("%s[_-]", cfg.AppName),             // Any container for app
+		fmt.Sprintf("mushak-%s-.*-web$", cfg.AppName), // Mushak override naming with web service
+		fmt.Sprintf("mushak-%s-.*-web-", cfg.AppName), // Mushak compose naming with web service
+		fmt.Sprintf("mushak-%s-", cfg.AppName),        // Any Mushak container for this app
+		fmt.Sprintf("%s[_-]web", cfg.AppName),         // Infrastructure or legacy naming with web
+		fmt.Sprintf("%s[_-]", cfg.AppName),            // Any container for app
+	}
+
+	if logsContainer != "" {
+		// If specific container requested, prioritize it
+		// We add patterns to match the container name loosely
+		customPatterns := []string{
+			logsContainer,                                      // Exact name
+			fmt.Sprintf("mushak-%s-.*-%s", cfg.AppName, logsContainer), // Mushak service name
+			fmt.Sprintf("%s[_-]%s", cfg.AppName, logsContainer),        // Infra service name
+		}
+		patterns = append(customPatterns, patterns...)
 	}
 
 	var containerID string

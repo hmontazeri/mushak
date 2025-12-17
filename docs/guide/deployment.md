@@ -20,6 +20,16 @@ The standard workflow is:
 > [!TIP]
 > You don't need to push to GitHub/GitLab first. `mushak deploy` pushes directly to your private server.
 
+## Manual Redeployment
+
+Sometimes you want to restart your application or redeploy the current version without pushing new code. You can do this with:
+
+```bash
+mushak redeploy
+```
+
+This triggers the deployment hook on the server using the currently deployed code (SHA).
+
 ## Resolving Build Issues
 
 If you encounter issues where changes aren't reflecting or an old dependency is stuck, you can force a clean build without using the Docker cache:
@@ -89,6 +99,14 @@ mushak env push .env.prod    # Upload specific file
 ```bash
 # Set variables and trigger redeployment
 mushak env set DATABASE_PASSWORD=secret API_KEY=abc123
+```
+
+### Upload and Redeploy
+
+To upload your local environment file and immediately trigger a deployment:
+
+```bash
+mushak env push --deploy
 ```
 
 ### Syncing with Team

@@ -13,8 +13,9 @@ This is the most common error. It means your app container started, but Mushak c
 3.  **Crash on Boot**: SSH into the server and check docker logs:
     ```bash
     ssh user@server
-    docker ps -a
-    docker logs <container_id>
+    # Or use mushak containers to find the name
+    mushak containers
+    docker logs <container_name>
     ```
 
 ### "Connection refused" or "ssh: unable to authenticate"
@@ -100,6 +101,12 @@ Mushak provides several commands to debug your deployment:
 mushak logs              # View container logs
 mushak logs -f           # Follow logs in real-time
 mushak logs -n 500       # Show last 500 lines
+mushak logs -c web       # Filter by container name (e.g. 'web')
+```
+
+### List containers
+```bash
+mushak containers        # List running containers
 ```
 
 ### Access container shell

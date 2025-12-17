@@ -80,3 +80,19 @@ func TestPluralizeEnv(t *testing.T) {
 		})
 	}
 }
+
+func TestEnvPushCommandFlags(t *testing.T) {
+	if envPushCmd == nil {
+		t.Fatal("envPushCmd should not be nil")
+	}
+
+	// Check deploy flag
+	deployFlag := envPushCmd.Flags().Lookup("deploy")
+	if deployFlag == nil {
+		t.Error("env push command should have --deploy flag")
+	} else {
+		if deployFlag.Shorthand != "d" {
+			t.Errorf("deploy flag shorthand = %v, want d", deployFlag.Shorthand)
+		}
+	}
+}
