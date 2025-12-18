@@ -14,6 +14,7 @@ type AppConfig struct {
 	HealthTimeout       int      `yaml:"health_timeout"`
 	ServiceName         string   `yaml:"service_name"`
 	PersistentServices  []string `yaml:"persistent_services"`
+	CacheLimit          string   `yaml:"cache_limit"` // e.g. "10GB" or "24h"
 }
 
 // DefaultConfig returns the default configuration

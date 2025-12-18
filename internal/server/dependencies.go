@@ -117,6 +117,11 @@ func InstallDocker(executor *ssh.Executor) error {
 		return fmt.Errorf("failed to enable Docker: %w", err)
 	}
 
+	// Configure Docker BuildKit GC for better cache management
+	if err := ConfigureDockerGC(executor); err != nil {
+		ui.PrintWarning(fmt.Sprintf("Could not configure Docker GC: %v", err))
+	}
+
 	// Add user to docker group
 	if _, err := executor.RunSudo("usermod -aG docker $USER"); err != nil {
 		// Not critical, user can run docker with sudo
@@ -124,6 +129,64 @@ func InstallDocker(executor *ssh.Executor) error {
 	}
 
 	ui.PrintSuccess("Docker installed")
+	return nil
+}
+
+// ConfigureDockerGC sets up sensible default garbage collection for Docker BuildKit
+func ConfigureDockerGC(executor *ssh.Executor) error {
+	ui.PrintInfo("Configuring Docker BuildKit GC...")
+
+	daemonJsonPath := "/etc/docker/daemon.json"
+	
+	// Check if daemon.json already exists
+	exists := false
+	if _, err := executor.Run(fmt.Sprintf("ls %s", daemonJsonPath)); err == nil {
+		exists = true
+	}
+
+	gcConfig := `{
+  "builder": {
+    "gc": {
+      "enabled": true,
+      "default_keep_storage": "10GB",
+      "policy": [
+        { "keep_storage": "5GB", "filter": ["unused-for=168h"] },
+        { "keep_storage": "10GB", "filter": ["unused-for=336h"] },
+        { "keep_storage": "20GB" }
+      ]
+    }
+  }
+}`
+
+	if exists {
+		// If it exists, we don't want to blindly overwrite it. 
+		// For now, we'll just check if "builder" is already there.
+		content, err := executor.RunSudo(fmt.Sprintf("cat %s", daemonJsonPath))
+		if err == nil && strings.Contains(content, "\"builder\"") {
+			ui.PrintInfo("Docker builder configuration already exists, skipping...")
+			return nil
+		}
+		
+		// If it exists but no builder config, we'd need to merge JSON which is complex via SSH.
+		// For simplicity in Mushak, we'll just inform the user if we can't easily merge.
+		ui.PrintWarning("Custom /etc/docker/daemon.json exists. Please manually add 'builder' GC config.")
+		return nil
+	}
+
+	// Create new daemon.json
+	if err := executor.WriteFileSudo(daemonJsonPath, gcConfig); err != nil {
+		return fmt.Errorf("failed to write daemon.json: %w", err)
+	}
+
+	// Reload docker to apply changes
+	if _, err := executor.RunSudo("systemctl reload docker"); err != nil {
+		// Some systems might not support reload for daemon.json changes, try restart
+		if _, err := executor.RunSudo("systemctl restart docker"); err != nil {
+			return fmt.Errorf("failed to restart docker after config change: %w", err)
+		}
+	}
+
+	ui.PrintSuccess("Docker BuildKit GC configured (10GB limit)")
 	return nil
 }
 

@@ -145,6 +145,7 @@ while read oldrev newrev refname; do
 
     # Read mushak.yaml if it exists
     CUSTOM_PERSISTENT_SERVICES=""
+    CACHE_LIMIT="24h"
     if [ -f "mushak.yaml" ]; then
         echo "  Found mushak.yaml"
 
@@ -164,13 +165,18 @@ while read oldrev newrev refname; do
             echo "  Health timeout: $HEALTH_TIMEOUT"
         fi
 
+        if grep -q "cache_limit:" mushak.yaml; then
+            CACHE_LIMIT=$(grep "cache_limit:" mushak.yaml | awk '{print $2}')
+            echo "  Cache limit: $CACHE_LIMIT"
+        fi
+
         # Read persistent_services array (simple parsing)
         if grep -q "persistent_services:" mushak.yaml; then
             CUSTOM_PERSISTENT_SERVICES=$(grep -A 10 "persistent_services:" mushak.yaml | grep "^  - " | sed 's/^  - //' | tr '\n' ' ')
             echo "  Persistent services: $CUSTOM_PERSISTENT_SERVICES"
         fi
     else
-        echo "  Using defaults (internal_port=$INTERNAL_PORT, health_path=$HEALTH_PATH)"
+        echo "  Using defaults (internal_port=$INTERNAL_PORT, health_path=$HEALTH_PATH, cache_limit=$CACHE_LIMIT)"
     fi
 
     echo ""
@@ -497,9 +503,18 @@ EOF
         docker rmi "$old_image" 2>/dev/null || true
     done
 
-    # Prune dangling images to free up space
+    # Prune dangling images and build cache to free up space
     docker image prune -f > /dev/null 2>&1 || true
-    echo "  Pruned dangling images"
+    
+    # Use CACHE_LIMIT for builder prune. 
+    # If it looks like a duration (ends with h, m, s), use until filter.
+    # Otherwise, it's just a raw filter or we fallback to 24h.
+    if [[ "$CACHE_LIMIT" =~ [0-9]+[hms]$ ]]; then
+        docker builder prune -f --filter "until=$CACHE_LIMIT" > /dev/null 2>&1 || true
+    else
+        docker builder prune -f --filter "$CACHE_LIMIT" > /dev/null 2>&1 || true
+    fi
+    echo "  Pruned dangling images and build cache (limit: $CACHE_LIMIT)"
 
     echo ""
     echo "========================================="
