@@ -199,6 +199,48 @@ Trigger a redeployment of the current version on the server. Useful for restarti
 mushak redeploy
 ```
 
+## mushak rollback
+
+Rollback to a previous deployment version. Mushak keeps the last 3 Docker images for instant rollbacks without rebuilding.
+
+```bash
+mushak rollback [sha]
+```
+
+**Arguments:**
+- `sha` (optional): The commit SHA to rollback to. If omitted, shows available versions interactively.
+
+**Special values:**
+- `-1`: Rollback to the previous version
+
+**Examples:**
+
+```bash
+# List available versions interactively
+mushak rollback
+
+# Output:
+#   SHA        DEPLOYED               STATUS
+#   ---        --------               ------
+#   abc123d    2024-12-18 10:30:45    current ←
+#   def456e    2024-12-17 14:22:10
+#   ghi789f    2024-12-16 09:15:33
+
+# Rollback to specific version
+mushak rollback def456e
+
+# Rollback to previous version (shorthand)
+mushak rollback -1
+```
+
+**How it works:**
+- Uses pre-built Docker images (no rebuild required)
+- Performs health check before switching traffic
+- Updates Caddy reverse proxy atomically
+- Zero downtime rollback
+
+**Note:** Only versions with cached images can be rolled back to. Mushak automatically keeps the last 3 images for rollback support.
+
 ## mushak shell
 
 Opens an interactive bash/shell session directly inside the running application container. This is useful for debugging issues, inspecting files, or checking environment variables in the production environment.

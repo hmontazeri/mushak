@@ -442,7 +442,64 @@ EOF
 
     # Cleanup old deployment directories (keep last 3)
     cd /var/www/$APP_NAME
-    ls -t | tail -n +4 | xargs -r rm -rf
+    ls -t -d */ 2>/dev/null | grep -v "current" | tail -n +4 | xargs -r rm -rf
+
+    echo ""
+    echo "→ Tagging images for rollback..."
+
+    # Image tagging and cleanup for rollback support
+    # We tag images with the app name and SHA for easy identification
+    IMAGE_REPO="mushak-${APP_NAME}"
+    DEPLOYMENTS_FILE="/var/www/$APP_NAME/.deployments"
+    KEEP_IMAGES=3
+
+    if [ "$BUILD_METHOD" = "compose" ]; then
+        # For compose, tag the built images for the main web service
+        # Get the image ID of the service we just deployed
+        BUILT_IMAGE=$(docker compose -p $PROJECT_NAME images -q $SERVICE_NAME 2>/dev/null | head -1)
+        if [ -n "$BUILT_IMAGE" ]; then
+            docker tag "$BUILT_IMAGE" "${IMAGE_REPO}:${SHA}" 2>/dev/null || true
+            docker tag "$BUILT_IMAGE" "${IMAGE_REPO}:latest" 2>/dev/null || true
+            echo "  Tagged image: ${IMAGE_REPO}:${SHA}"
+        fi
+    else
+        # For Dockerfile, tag the built image
+        docker tag "$PROJECT_NAME" "${IMAGE_REPO}:${SHA}" 2>/dev/null || true
+        docker tag "$PROJECT_NAME" "${IMAGE_REPO}:latest" 2>/dev/null || true
+        echo "  Tagged image: ${IMAGE_REPO}:${SHA}"
+    fi
+
+    # Record deployment to manifest file (for rollback listing)
+    # Format: SHA TIMESTAMP PORT BUILD_METHOD
+    echo "${SHA} $(date -u +%%Y-%%m-%%dT%%H:%%M:%%SZ) ${HOST_PORT} ${BUILD_METHOD}" >> "$DEPLOYMENTS_FILE"
+    echo "  Recorded deployment to manifest"
+
+    echo ""
+    echo "→ Cleaning up old images (keeping last $KEEP_IMAGES)..."
+
+    # Get all tagged versions for this app, sorted by creation time (newest first)
+    # Skip 'latest' and keep the most recent N versions
+    OLD_TAGS=$(docker images "${IMAGE_REPO}" --format "{{.Tag}} {{.CreatedAt}}" 2>/dev/null | \
+        grep -v "latest" | \
+        sort -k2 -r | \
+        tail -n +$((KEEP_IMAGES + 1)) | \
+        awk '{print $1}')
+
+    for tag in $OLD_TAGS; do
+        echo "  Removing old image: ${IMAGE_REPO}:${tag}"
+        docker rmi "${IMAGE_REPO}:${tag}" 2>/dev/null || true
+    done
+
+    # Also cleanup old project-specific images that are no longer tagged
+    # These are images like mushak-myapp-abc123f that we can safely remove
+    docker images --format "{{.Repository}}:{{.Tag}}" | grep "^mushak-${APP_NAME}-" | grep -v "$SHA" | while read old_image; do
+        echo "  Removing old build image: $old_image"
+        docker rmi "$old_image" 2>/dev/null || true
+    done
+
+    # Prune dangling images to free up space
+    docker image prune -f > /dev/null 2>&1 || true
+    echo "  Pruned dangling images"
 
     echo ""
     echo "========================================="

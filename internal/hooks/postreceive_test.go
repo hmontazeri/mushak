@@ -219,7 +219,10 @@ func TestGeneratePostReceiveHook_Cleanup(t *testing.T) {
 	cleanupElements := []string{
 		"Cleaning up old containers",
 		"grep -v \"$SHA\"",
-		"ls -t | tail -n +4",
+		"tail -n +4",
+		"Tagging images for rollback",
+		"Cleaning up old images",
+		"docker image prune",
 	}
 
 	for _, element := range cleanupElements {
