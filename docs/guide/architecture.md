@@ -32,9 +32,23 @@ When you run `mushak deploy`, the following sequence occurs:
 8.  **Switch Traffic**:
     *   Once healthy, Mushak updates the Caddy configuration file.
     *   Caddy reloads and instantly points the domain to the new port. This atomic switch ensures zero downtime.
-9.  **Cleanup**:
+9.  **Cleanup & Image Management**:
     *   Mushak stops the old container(s) and removes old deployment directories (keeps last 3).
+    *   **Image Tagging**: Each deployment's image is tagged as `mushak-<app>:<sha>` for rollback support.
+    *   **Image Cleanup**: Old images are automatically pruned, keeping the last 3 versions for rollback.
+    *   **Dangling Images**: Build cache and dangling images are pruned after each deployment.
     *   **IMPORTANT**: Docker volumes are NEVER removed. Mushak uses `docker compose down` without the `-v` flag, preserving all database data, uploads, and persistent storage.
+
+## Rollback
+
+Mushak supports instant rollbacks to previous deployments using cached Docker images:
+
+1.  **No Rebuild Required**: Rollbacks use pre-built images, making them nearly instant.
+2.  **Health Check**: The rollback target is health-checked before switching traffic.
+3.  **Zero Downtime**: Traffic is switched atomically via Caddy configuration.
+4.  **Retention Policy**: Last 3 images are kept for rollback support.
+
+Use `mushak rollback` to list available versions or `mushak rollback <sha>` to rollback to a specific version.
 
 ## Directory Structure
 
@@ -48,6 +62,8 @@ On your server, Mushak organizes files as follows:
 │   └── www/
 │       └── myapp/
 │           ├── .env.prod    # Environment variables (managed by mushak env)
+│           ├── .deployments # Deployment history (for rollback)
+│           ├── current/     # Symlink to current deployment
 │           ├── abc123d/     # Deployment by commit SHA
 │           │   ├── .env.prod  # Copied from parent directory
 │           │   └── ...      # Your application code
@@ -58,6 +74,14 @@ On your server, Mushak organizes files as follows:
         └── apps/
             └── myapp.caddy  # App-specific config
 ```
+
+## Docker Images
+
+Mushak manages Docker images with a naming convention:
+
+- `mushak-<app>:<sha>` - Tagged images for each deployment (kept for rollback)
+- `mushak-<app>:latest` - Always points to the current deployment
+- `mushak-<app>-<sha>-<service>` - Container names for compose services
 
 ## Security Models
 
