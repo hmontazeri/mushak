@@ -518,3 +518,10 @@ Built with:
 
 - GitHub Issues: [github.com/hmontazeri/mushak/issues](https://github.com/hmontazeri/mushak/issues)
 - Documentation: [github.com/hmontazeri/mushak/wiki](https://github.com/hmontazeri/mushak/wiki)
+
+## Supporting My Work
+
+Launched your app with Mushak and need server/container monitoring? Check out **[BareAgent.io](https://bareagent.io)** - a simple, effective monitoring solution for your Docker containers and servers.
+
+By using BareAgent.io, you're directly supporting the development of Mushak and other open-source tools. Thank you for your support!
+
