@@ -491,7 +491,7 @@ Check the output from `mushak deploy`. Common issues:
 ## Roadmap
 
 - [ ] GitHub Actions integration
-- [ ] Rollback to previous deployment
+- [x] Rollback to previous deployment
 - [x] Log viewing (`mushak logs`)
 - [x] SSH access (`mushak exec`)
 - [x] Environment variable management (`mushak env set`)
