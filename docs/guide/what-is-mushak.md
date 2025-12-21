@@ -7,6 +7,7 @@
 In the modern devops landscape, developers often face a binary choice:
 1. **Expensive PaaS**: Heroku, Vercel, Railway. Easy to use, but costs scale rapidly and you don't own the infrastructure.
 2. **Complex DIY**: Kubernetes, manual Docker management, Nginx config hacking. Cheap infrastructure, but high maintenance and complexity.
+3. **Different use cases**: Kamal, Nomad, Nomad. Cheap infrastructure, but needs config / env management and some orchestration.
 
 **Mushak** sits in the middle. It gives you the "Heroku experience" (`git push` to deploy) on your own $5 DigitalOcean/Hetzner droplet.
 
@@ -15,6 +16,7 @@ In the modern devops landscape, developers often face a binary choice:
 Mushak is **not** for everyone.
 - It is **not** for large enterprises needing complex orchestration (use K8s).
 - It is **not** for serverless functions (use Vercel/Lambda).
+- It is **not** for multi-server orchestration (use kamal or k8s).
 
 It **is** for:
 - **Solo Developers** shipping side projects.
