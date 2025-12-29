@@ -4,6 +4,8 @@
 
 Mushak is a CLI tool that brings PaaS-like deployment experience to your own Linux VPS. Deploy your Docker-based applications with a simple `git push`, complete with automatic builds, health checks, and zero-downtime switching.
 
+If your project has a Dockerfile or docker-compose.yml, it should just work.
+
 ## Why Mushak?
 
 I absolutly love Docker and Docker Compose. I just wish it was easy to deploy it to a remote server. But there are 2 issues when it comes to remote deployment:
