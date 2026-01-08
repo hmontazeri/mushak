@@ -229,6 +229,22 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to save config: %w", err)
 	}
 
+	// Detect internal port and create mushak.yaml if needed
+	internalPort := utils.DetectInternalPort()
+	if internalPort > 0 && internalPort != 80 {
+		ui.PrintInfo(fmt.Sprintf("Detected internal port: %d", internalPort))
+		confirmed, err := utils.Confirm(fmt.Sprintf("→ Use %d as internal port?", internalPort))
+		if err == nil && confirmed {
+			appCfg := config.DefaultConfig()
+			appCfg.InternalPort = internalPort
+			if err := config.SaveAppConfig(appCfg); err != nil {
+				ui.PrintWarning(fmt.Sprintf("Failed to save mushak.yaml: %v", err))
+			} else {
+				ui.PrintSuccess("Created mushak.yaml with detected port")
+			}
+		}
+	}
+
 	// Success message
 	println()
 	ui.PrintSeparator()

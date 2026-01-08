@@ -43,8 +43,21 @@ func LoadConfig(path string) (*AppConfig, error) {
 	if err := yaml.Unmarshal(data, cfg); err != nil {
 		return nil, fmt.Errorf("failed to parse config file: %w", err)
 	}
-
 	return cfg, nil
+}
+
+// SaveAppConfig saves application configuration to mushak.yaml
+func SaveAppConfig(cfg *AppConfig) error {
+	data, err := yaml.Marshal(cfg)
+	if err != nil {
+		return fmt.Errorf("failed to marshal config: %w", err)
+	}
+
+	if err := os.WriteFile("mushak.yaml", data, 0644); err != nil {
+		return fmt.Errorf("failed to write mushak.yaml: %w", err)
+	}
+
+	return nil
 }
 
 // DeployConfig represents local deployment configuration
