@@ -150,9 +150,28 @@ func runEnvSet(cmd *cobra.Command, args []string) error {
 	}
 	ui.PrintSuccess(fmt.Sprintf("Updated %s", targetPath))
 
+	// Load application configuration
+	appCfg, _ := config.LoadConfig("mushak.yaml")
+
+	// Resolve configuration with overrides
+	internalPort := cfg.InternalPort
+	if internalPort == 0 && appCfg != nil {
+		internalPort = appCfg.InternalPort
+	}
+
+	healthPath := cfg.HealthPath
+	if healthPath == "" && appCfg != nil {
+		healthPath = appCfg.HealthPath
+	}
+
+	healthTimeout := cfg.HealthTimeout
+	if healthTimeout == 0 && appCfg != nil {
+		healthTimeout = appCfg.HealthTimeout
+	}
+
 	// Update deployment hook (to ensure it supports .env)
 	ui.PrintInfo("Updating deployment hook...")
-	hookScript := hooks.GeneratePostReceiveHook(cfg.AppName, cfg.Domain, cfg.Branch, false)
+	hookScript := hooks.GeneratePostReceiveHook(cfg.AppName, cfg.Domain, cfg.Branch, false, internalPort, healthPath, healthTimeout)
 	if err := server.InstallPostReceiveHook(executor, cfg.AppName, hookScript); err != nil {
 		return fmt.Errorf("failed to update hook: %w", err)
 	}

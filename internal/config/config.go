@@ -69,6 +69,11 @@ type DeployConfig struct {
 	Domain     string `yaml:"domain"`
 	Branch     string `yaml:"branch"`
 	RemoteName string `yaml:"remote_name"`
+
+	// Optional overrides
+	InternalPort  int    `yaml:"internal_port,omitempty"`
+	HealthPath    string `yaml:"health_path,omitempty"`
+	HealthTimeout int    `yaml:"health_timeout,omitempty"`
 }
 
 // SaveDeployConfig saves deployment configuration locally

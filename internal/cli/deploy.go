@@ -78,8 +78,11 @@ func runDeploy(cmd *cobra.Command, args []string) error {
 		ui.PrintWarning(fmt.Sprintf("%v", err))
 	}
 
+	// Load application configuration (optional mushak.yaml in repo root)
+	appCfg, _ := config.LoadConfig("mushak.yaml")
+
 	// Update post-receive hook on server to ensure it has the latest logic
-	if err := updateServerHook(cfg); err != nil {
+	if err := UpdateServerHook(cfg, appCfg); err != nil {
 		ui.PrintWarning(fmt.Sprintf("Failed to update deployment hook: %v", err))
 	}
 	println()
@@ -122,8 +125,8 @@ func getCurrentBranch() (string, error) {
 	return branch, nil
 }
 
-// updateServerHook updates the post-receive hook on the server
-func updateServerHook(cfg *config.DeployConfig) error {
+// UpdateServerHook updates the post-receive hook on the server
+func UpdateServerHook(cfg *config.DeployConfig, appCfg *config.AppConfig) error {
 	ui.PrintInfo("Updating deployment hook...")
 
 	client, err := ssh.NewClient(ssh.Config{
@@ -141,7 +144,23 @@ func updateServerHook(cfg *config.DeployConfig) error {
 
 	executor := ssh.NewExecutor(client)
 
-	hookScript := hooks.GeneratePostReceiveHook(cfg.AppName, cfg.Domain, cfg.Branch, deployNoCache)
+	// Resolve configuration with overrides
+	internalPort := cfg.InternalPort
+	if internalPort == 0 && appCfg != nil {
+		internalPort = appCfg.InternalPort
+	}
+
+	healthPath := cfg.HealthPath
+	if healthPath == "" && appCfg != nil {
+		healthPath = appCfg.HealthPath
+	}
+
+	healthTimeout := cfg.HealthTimeout
+	if healthTimeout == 0 && appCfg != nil {
+		healthTimeout = appCfg.HealthTimeout
+	}
+
+	hookScript := hooks.GeneratePostReceiveHook(cfg.AppName, cfg.Domain, cfg.Branch, deployNoCache, internalPort, healthPath, healthTimeout)
 	if err := server.InstallPostReceiveHook(executor, cfg.AppName, hookScript); err != nil {
 		return fmt.Errorf("failed to install post-receive hook: %w", err)
 	}

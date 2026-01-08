@@ -103,9 +103,28 @@ func runDomain(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to update Caddy config: %w", err)
 	}
 
+	// Load application configuration
+	appCfg, _ := config.LoadConfig("mushak.yaml")
+
+	// Resolve configuration with overrides
+	internalPort := cfg.InternalPort
+	if internalPort == 0 && appCfg != nil {
+		internalPort = appCfg.InternalPort
+	}
+
+	healthPath := cfg.HealthPath
+	if healthPath == "" && appCfg != nil {
+		healthPath = appCfg.HealthPath
+	}
+
+	healthTimeout := cfg.HealthTimeout
+	if healthTimeout == 0 && appCfg != nil {
+		healthTimeout = appCfg.HealthTimeout
+	}
+
 	// Update post-receive hook
 	ui.PrintInfo("Updating deployment hook...")
-	hookScript := hooks.GeneratePostReceiveHook(cfg.AppName, newDomain, cfg.Branch, false)
+	hookScript := hooks.GeneratePostReceiveHook(cfg.AppName, newDomain, cfg.Branch, false, internalPort, healthPath, healthTimeout)
 	if err := server.InstallPostReceiveHook(executor, cfg.AppName, hookScript); err != nil {
 		return fmt.Errorf("failed to install post-receive hook: %w", err)
 	}

@@ -166,7 +166,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	println()
 
 	// Generate and install post-receive hook
-	hookScript := hooks.GeneratePostReceiveHook(initApp, initDomain, initBranch, false)
+	hookScript := hooks.GeneratePostReceiveHook(initApp, initDomain, initBranch, false, 0, "", 0)
 	if err := server.InstallPostReceiveHook(executor, initApp, hookScript); err != nil {
 		return fmt.Errorf("failed to install post-receive hook: %w", err)
 	}

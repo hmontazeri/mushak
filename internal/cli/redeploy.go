@@ -53,6 +53,14 @@ func runRedeploy(cmd *cobra.Command, args []string) error {
 
 	executor := ssh.NewExecutor(client)
 
+	// Load application configuration
+	appCfg, _ := config.LoadConfig("mushak.yaml")
+
+	// Update post-receive hook on server to ensure it has the latest logic/config
+	if err := UpdateServerHook(cfg, appCfg); err != nil {
+		ui.PrintWarning(fmt.Sprintf("Failed to update deployment hook: %v", err))
+	}
+
 	// Trigger Redeploy
 	if err := server.TriggerRedeploy(executor, cfg); err != nil {
 		return err

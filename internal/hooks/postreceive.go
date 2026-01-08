@@ -5,10 +5,17 @@ import (
 )
 
 // GeneratePostReceiveHook generates the post-receive hook script
-func GeneratePostReceiveHook(appName, domain, branch string, noCache bool) string {
+func GeneratePostReceiveHook(appName, domain, branch string, noCache bool, internalPort int, healthPath string, healthTimeout int) string {
 	buildOpts := ""
 	if noCache {
 		buildOpts = "--no-cache"
+	}
+
+	if healthPath == "" {
+		healthPath = "/"
+	}
+	if healthTimeout == 0 {
+		healthTimeout = 30
 	}
 
 	return fmt.Sprintf(`#!/bin/bash
@@ -19,6 +26,13 @@ APP_NAME="%s"
 DOMAIN="%s"
 DEPLOY_BRANCH="%s"
 BUILD_OPTS="%s"
+
+# Configured defaults from mushak init/deploy
+CFG_INTERNAL_PORT=%d
+CFG_HEALTH_PATH="%s"
+CFG_HEALTH_TIMEOUT=%d
+
+# Default values if not specified anywhere
 INTERNAL_PORT=80
 HEALTH_PATH="/"
 HEALTH_TIMEOUT=30
@@ -137,36 +151,70 @@ while read oldrev newrev refname; do
     fi
 
     # Sanitize docker-compose files to remove hardcoded ports
+    # We do this BEFORE reading configuration so we can detect ports from the original file if needed
+    
+    # 1. Try to detect internal port if not set in DeployConfig
+    DETECTED_PORT=0
+    if [ -f "mushak.yaml" ]; then
+        DETECTED_PORT=$(grep "internal_port:" mushak.yaml | head -1 | awk '{print $2}' || echo 0)
+    fi
+    
+    if [ "$DETECTED_PORT" -eq 0 ] && [ -f "docker-compose.yml" ]; then
+        # Look for the web service port
+        DETECTED_PORT=$(grep -A 10 "web" docker-compose.yml | grep -A 5 "ports:" | grep -E "\-[[:space:]]*[\"\']?[0-9]+:[0-9]+[\"\']?" | head -1 | sed -E 's/.*:([0-9]+).*/\1/' || echo 0)
+    fi
+
+    if [ "$DETECTED_PORT" -eq 0 ] && [ -f "Dockerfile" ]; then
+        DETECTED_PORT=$(grep -i "^EXPOSE" Dockerfile | head -1 | awk '{print $2}' || echo 0)
+    fi
+
+    # 2. Sanitize files
     sanitize_docker_compose "docker-compose.yml"
     sanitize_docker_compose "docker-compose.yaml"
 
     echo ""
     echo "→ Reading configuration..."
 
-    # Read mushak.yaml if it exists
+    # Apply configuration hierarchy:
+    # 1. mushak.yaml (Committed repo config)
+    # 2. CFG_* values (From mushak deploy/redeploy overrides)
+    # 3. DETECTED_PORT (Automatic detection)
+    # 4. Defaults (80, /, 30)
+
+    # Start with defaults or pass-through values
+    [ "$CFG_INTERNAL_PORT" -gt 0 ] && INTERNAL_PORT=$CFG_INTERNAL_PORT
+    [ -n "$CFG_HEALTH_PATH" ] && HEALTH_PATH="$CFG_HEALTH_PATH"
+    [ "$CFG_HEALTH_TIMEOUT" -gt 0 ] && HEALTH_TIMEOUT=$CFG_HEALTH_TIMEOUT
+
+    # Use detected port if no override provided and not default
+    if [ "$INTERNAL_PORT" -eq 80 ] && [ "$DETECTED_PORT" -gt 0 ]; then
+        INTERNAL_PORT=$DETECTED_PORT
+        echo "  Automatically detected port: $INTERNAL_PORT"
+    fi
+
+    # Read mushak.yaml if it exists (Highest priority for app settings)
     CUSTOM_PERSISTENT_SERVICES=""
     CACHE_LIMIT="24h"
     if [ -f "mushak.yaml" ]; then
         echo "  Found mushak.yaml"
 
-        # Simple YAML parsing (works for simple key: value pairs)
         if grep -q "internal_port:" mushak.yaml; then
-            INTERNAL_PORT=$(grep "internal_port:" mushak.yaml | awk '{print $2}')
-            echo "  Internal port: $INTERNAL_PORT"
+            INTERNAL_PORT=$(grep "internal_port:" mushak.yaml | head -1 | awk '{print $2}')
+            echo "  Internal port (from mushak.yaml): $INTERNAL_PORT"
         fi
 
         if grep -q "health_path:" mushak.yaml; then
-            HEALTH_PATH=$(grep "health_path:" mushak.yaml | awk '{print $2}')
+            HEALTH_PATH=$(grep "health_path:" mushak.yaml | head -1 | awk '{print $2}')
             echo "  Health path: $HEALTH_PATH"
         fi
 
         if grep -q "health_timeout:" mushak.yaml; then
-            HEALTH_TIMEOUT=$(grep "health_timeout:" mushak.yaml | awk '{print $2}')
+            HEALTH_TIMEOUT=$(grep "health_timeout:" mushak.yaml | head -1 | awk '{print $2}')
             echo "  Health timeout: $HEALTH_TIMEOUT"
         fi
 
         if grep -q "cache_limit:" mushak.yaml; then
-            CACHE_LIMIT=$(grep "cache_limit:" mushak.yaml | awk '{print $2}')
+            CACHE_LIMIT=$(grep "cache_limit:" mushak.yaml | head -1 | awk '{print $2}')
             echo "  Cache limit: $CACHE_LIMIT"
         fi
 
@@ -176,7 +224,7 @@ while read oldrev newrev refname; do
             echo "  Persistent services: $CUSTOM_PERSISTENT_SERVICES"
         fi
     else
-        echo "  Using defaults (internal_port=$INTERNAL_PORT, health_path=$HEALTH_PATH, cache_limit=$CACHE_LIMIT)"
+        echo "  Using current config (internal_port=$INTERNAL_PORT, health_path=$HEALTH_PATH, timeout=$HEALTH_TIMEOUT, cache=$CACHE_LIMIT)"
     fi
 
     echo ""
@@ -526,5 +574,5 @@ EOF
     echo "URL: https://$DOMAIN"
     echo "========================================="
 done
-`, appName, domain, branch, buildOpts)
+`, appName, domain, branch, buildOpts, internalPort, healthPath, healthTimeout)
 }
