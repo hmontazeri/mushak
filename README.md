@@ -8,8 +8,9 @@ If your project has a Dockerfile or docker-compose.yml, it should just work.
 
 ## Demo
 
-<video src="mushak-demo.mp4" controls="controls" style="max-width: 600px;">
-</video>
+<div align="center">
+  <video src="https://github.com/hmontazeri/mushak/raw/main/mushak-demo.mp4" width="100%" controls></video>
+</div>
 
 ## Why Mushak?
 
