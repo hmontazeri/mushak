@@ -8,7 +8,14 @@ If your project has a Dockerfile or docker-compose.yml, it should just work.
 
 ## Demo
 
-[![Mushak Demo](https://cdn.loom.com/sessions/thumbnails/4af167fe9d9743dd97a5fec7778e05bf-with-play.gif)](https://www.loom.com/share/4af167fe9d9743dd97a5fec7778e05bf)
+<div>
+    <a href="https://www.loom.com/share/4af167fe9d9743dd97a5fec7778e05bf">
+      <p>Mushak deployment - Watch Video</p>
+    </a>
+    <a href="https://www.loom.com/share/4af167fe9d9743dd97a5fec7778e05bf">
+      <img style="max-width:300px;" src="https://cdn.loom.com/sessions/thumbnails/4af167fe9d9743dd97a5fec7778e05bf-2d99c1237d8388e8-full-play.gif#t=0.1">
+    </a>
+</div>
 
 ## Why Mushak?
 
