@@ -6,6 +6,10 @@ Mushak is a CLI tool that brings PaaS-like deployment experience to your own Lin
 
 If your project has a Dockerfile or docker-compose.yml, it should just work.
 
+## Demo
+
+[![Mushak Demo](https://cdn.loom.com/sessions/thumbnails/4af167fe9d9743dd97a5fec7778e05bf-with-play.gif)](https://www.loom.com/share/4af167fe9d9743dd97a5fec7778e05bf)
+
 ## Why Mushak?
 
 I absolutly love Docker and Docker Compose. I just wish it was easy to deploy it to a remote server. But there are 2 issues when it comes to remote deployment:
