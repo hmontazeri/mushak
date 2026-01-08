@@ -7,6 +7,7 @@ Mushak is a CLI tool that brings PaaS-like deployment experience to your own Lin
 If your project has a Dockerfile or docker-compose.yml, it should just work.
 
 ## Demo
+![Watch the demo](https://github.com/hmontazeri/mushak/raw/main/mushak-demo.mp4)
 
 <div align="center">
   <video src="https://github.com/hmontazeri/mushak/raw/main/mushak-demo.mp4" width="100%" controls></video>
