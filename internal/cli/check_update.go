@@ -43,8 +43,8 @@ func CheckUpdateAsync() func() {
 
 	go func() {
 		// Update timestamp first
-		os.MkdirAll(filepath.Dir(checkFile), 0755)
-		os.WriteFile(checkFile, []byte(time.Now().String()), 0644)
+		_ = os.MkdirAll(filepath.Dir(checkFile), 0755)
+		_ = os.WriteFile(checkFile, []byte(time.Now().String()), 0644)
 
 		latest, found, err := selfupdate.DetectLatest("hmontazeri/mushak")
 		if err != nil {

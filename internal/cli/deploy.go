@@ -14,7 +14,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-
 var deployCmd = &cobra.Command{
 	Use:   "deploy",
 	Short: "Deploy the current branch to the server",

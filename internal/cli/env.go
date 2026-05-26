@@ -66,7 +66,7 @@ Example:
 }
 
 var envPushDeploy bool
-	
+
 func init() {
 	rootCmd.AddCommand(envCmd)
 	envCmd.AddCommand(envSetCmd)
@@ -76,7 +76,6 @@ func init() {
 
 	envPushCmd.Flags().BoolVarP(&envPushDeploy, "deploy", "d", false, "Trigger a redeployment after pushing environment file")
 }
-
 
 func runEnvSet(cmd *cobra.Command, args []string) error {
 	// Parse input args into map

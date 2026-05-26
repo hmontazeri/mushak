@@ -61,11 +61,11 @@ func runShell(cmd *cobra.Command, args []string) error {
 	// 3. Infrastructure: <app>_<service> (e.g., bareagent_postgres)
 	// Prioritize the web service container
 	patterns := []string{
-		fmt.Sprintf("mushak-%s-.*-web$", cfg.AppName),  // Mushak override naming with web service
-		fmt.Sprintf("mushak-%s-.*-web-", cfg.AppName),  // Mushak compose naming with web service
-		fmt.Sprintf("mushak-%s-", cfg.AppName),         // Any Mushak container for this app
-		fmt.Sprintf("%s[_-]web", cfg.AppName),          // Infrastructure or legacy naming with web
-		fmt.Sprintf("%s[_-]", cfg.AppName),             // Any container for app
+		fmt.Sprintf("mushak-%s-.*-web$", cfg.AppName), // Mushak override naming with web service
+		fmt.Sprintf("mushak-%s-.*-web-", cfg.AppName), // Mushak compose naming with web service
+		fmt.Sprintf("mushak-%s-", cfg.AppName),        // Any Mushak container for this app
+		fmt.Sprintf("%s[_-]web", cfg.AppName),         // Infrastructure or legacy naming with web
+		fmt.Sprintf("%s[_-]", cfg.AppName),            // Any container for app
 	}
 
 	var containerID string
@@ -89,7 +89,7 @@ func runShell(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to set terminal to raw mode: %w", err)
 	}
-	defer term.Restore(int(os.Stdin.Fd()), oldState)
+	defer func() { _ = term.Restore(int(os.Stdin.Fd()), oldState) }()
 
 	// Run interactive shell
 	dockerCmd := fmt.Sprintf("docker exec -it %s /bin/bash", containerID)

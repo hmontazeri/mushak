@@ -104,23 +104,23 @@ exit 0`,
 
 func TestGitRepoPathFormat(t *testing.T) {
 	tests := []struct {
-		appName      string
-		expectedRepo string
+		appName        string
+		expectedRepo   string
 		expectedDeploy string
 	}{
 		{
-			appName:      "app1",
-			expectedRepo: "/var/repo/app1.git",
+			appName:        "app1",
+			expectedRepo:   "/var/repo/app1.git",
 			expectedDeploy: "/var/www/app1",
 		},
 		{
-			appName:      "my-app",
-			expectedRepo: "/var/repo/my-app.git",
+			appName:        "my-app",
+			expectedRepo:   "/var/repo/my-app.git",
 			expectedDeploy: "/var/www/my-app",
 		},
 		{
-			appName:      "test_app_123",
-			expectedRepo: "/var/repo/test_app_123.git",
+			appName:        "test_app_123",
+			expectedRepo:   "/var/repo/test_app_123.git",
 			expectedDeploy: "/var/www/test_app_123",
 		},
 	}

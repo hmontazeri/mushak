@@ -13,13 +13,13 @@ import (
 
 // DeploymentVersion represents a deployed version available for rollback
 type DeploymentVersion struct {
-	SHA        string
-	Timestamp  string
-	Port       string
-	Method     string
-	HasImage   bool
-	HasDir     bool
-	IsCurrent  bool
+	SHA       string
+	Timestamp string
+	Port      string
+	Method    string
+	HasImage  bool
+	HasDir    bool
+	IsCurrent bool
 }
 
 // ListVersions lists available versions for rollback
@@ -350,4 +350,3 @@ echo "URL: https://$DOMAIN"
 echo "========================================="
 `, appName, domain, targetSHA)
 }
-

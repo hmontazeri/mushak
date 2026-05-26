@@ -45,7 +45,7 @@ func TestWithTimer(t *testing.T) {
 		// Read output
 		w.Close()
 		var buf bytes.Buffer
-		io.Copy(&buf, r)
+		_, _ = io.Copy(&buf, r)
 		output := buf.String()
 
 		// Verify output
@@ -58,7 +58,7 @@ func TestWithTimer(t *testing.T) {
 		// Reset pipe for new test
 		r, w, _ = os.Pipe()
 		color.Output = w
-		
+
 		cmd := &cobra.Command{
 			Use: "fail-cmd",
 			RunE: func(cmd *cobra.Command, args []string) error {
@@ -68,14 +68,14 @@ func TestWithTimer(t *testing.T) {
 
 		wrapped := withTimer(cmd.RunE)
 		err := wrapped(cmd, []string{})
-		
+
 		if err == nil {
 			t.Error("expected error")
 		}
 
 		w.Close()
 		var buf bytes.Buffer
-		io.Copy(&buf, r)
+		_, _ = io.Copy(&buf, r)
 		output := buf.String()
 
 		if output != "" {

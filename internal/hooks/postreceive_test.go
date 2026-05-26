@@ -247,7 +247,7 @@ func TestGeneratePostReceiveHook_NetworkAndInfra(t *testing.T) {
 
 	// This test assumes detailed knowledge of how internal variables are set in the script
 	// Ideally we would mock the docker-compose.yml presence and content, but since we are just checking string generation:
-	
+
 	// We check for the presence of the logic blocks
 	for _, element := range expectedElements {
 		if !strings.Contains(script, element) {

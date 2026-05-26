@@ -19,13 +19,13 @@ func TestRollbackCommand(t *testing.T) {
 func TestRollbackCommandExamples(t *testing.T) {
 	// Verify the long description contains expected examples
 	long := rollbackCmd.Long
-	
+
 	expectedExamples := []string{
 		"mushak rollback",
 		"mushak rollback abc123d",
 		"mushak rollback -1",
 	}
-	
+
 	for _, example := range expectedExamples {
 		if !contains(long, example) {
 			t.Errorf("Long description should contain example: %s", example)
@@ -45,4 +45,3 @@ func containsHelper(s, substr string) bool {
 	}
 	return false
 }
-

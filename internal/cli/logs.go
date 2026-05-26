@@ -79,7 +79,7 @@ func runLogs(cmd *cobra.Command, args []string) error {
 		// If specific container requested, prioritize it
 		// We add patterns to match the container name loosely
 		customPatterns := []string{
-			logsContainer,                                      // Exact name
+			logsContainer, // Exact name
 			fmt.Sprintf("mushak-%s-.*-%s", cfg.AppName, logsContainer), // Mushak service name
 			fmt.Sprintf("%s[_-]%s", cfg.AppName, logsContainer),        // Infra service name
 		}

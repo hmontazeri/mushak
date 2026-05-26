@@ -11,8 +11,6 @@ type MockSession struct {
 	runFunc    func(cmd string) error
 	closeFunc  func() error
 	signalFunc func(sig interface{}) error
-	stdout     []byte
-	stderr     []byte
 }
 
 func (m *MockSession) Run(cmd string) error {
@@ -37,9 +35,6 @@ func (m *MockSession) Signal(sig interface{}) error {
 }
 
 // MockClient implements a mock SSH client for testing
-type MockClient struct {
-	newSessionFunc func() (interface{}, error)
-}
 
 func TestNewExecutor(t *testing.T) {
 	client := &Client{}

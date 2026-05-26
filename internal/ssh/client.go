@@ -2,7 +2,7 @@ package ssh
 
 import (
 	"fmt"
-	"io/ioutil"
+
 	"net"
 	"os"
 	"path/filepath"
@@ -35,7 +35,7 @@ func NewClient(cfg Config) (*Client, error) {
 	}
 
 	authMethods, err := getAuthMethods(cfg.KeyPath, cfg.Password)
-	if err != nil {
+	if err != nil && len(authMethods) == 0 {
 		return nil, fmt.Errorf("failed to get auth methods: %w", err)
 	}
 
@@ -111,7 +111,7 @@ func getAuthMethods(keyPath, password string) ([]ssh.AuthMethod, error) {
 
 // getKeyAuth returns key-based authentication
 func getKeyAuth(keyPath string) (ssh.AuthMethod, error) {
-	key, err := ioutil.ReadFile(keyPath)
+	key, err := os.ReadFile(keyPath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read private key: %w", err)
 	}

@@ -197,4 +197,3 @@ func showVersionsAndPrompt(executor *ssh.Executor, cfg *config.DeployConfig, ver
 	println()
 	return server.ExecuteRollback(executor, cfg, targetVersion.SHA)
 }
-

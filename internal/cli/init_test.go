@@ -103,12 +103,12 @@ func TestInitCommandDescription(t *testing.T) {
 
 func TestInitGitRemoteURL(t *testing.T) {
 	tests := []struct {
-		name     string
-		user     string
-		host     string
-		port     string
-		appName  string
-		wantURL  string
+		name    string
+		user    string
+		host    string
+		port    string
+		appName string
+		wantURL string
 	}{
 		{
 			name:    "standard port",

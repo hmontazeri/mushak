@@ -15,8 +15,8 @@ var updateCmd = &cobra.Command{
 	Use:     "upgrade",
 	Aliases: []string{"update"},
 	Short:   "Upgrade mushak to the latest version",
-	Long:  `Update checks for the latest release on GitHub and updates the binary if a newer version is available.`,
-	RunE:  runUpdate,
+	Long:    `Update checks for the latest release on GitHub and updates the binary if a newer version is available.`,
+	RunE:    runUpdate,
 }
 
 var updateCheck bool
@@ -57,7 +57,7 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 		fmt.Printf("Would you like to install the latest release (%s)? (y/N): ", latest.Version)
 
 		var response string
-		fmt.Scanln(&response)
+		_, _ = fmt.Scanln(&response)
 		if response != "y" && response != "Y" {
 			ui.PrintInfo("Update cancelled")
 			return nil

@@ -137,7 +137,7 @@ func ConfigureDockerGC(executor *ssh.Executor) error {
 	ui.PrintInfo("Configuring Docker BuildKit GC...")
 
 	daemonJsonPath := "/etc/docker/daemon.json"
-	
+
 	// Check if daemon.json already exists
 	exists := false
 	if _, err := executor.Run(fmt.Sprintf("ls %s", daemonJsonPath)); err == nil {
@@ -159,14 +159,14 @@ func ConfigureDockerGC(executor *ssh.Executor) error {
 }`
 
 	if exists {
-		// If it exists, we don't want to blindly overwrite it. 
+		// If it exists, we don't want to blindly overwrite it.
 		// For now, we'll just check if "builder" is already there.
 		content, err := executor.RunSudo(fmt.Sprintf("cat %s", daemonJsonPath))
 		if err == nil && strings.Contains(content, "\"builder\"") {
 			ui.PrintInfo("Docker builder configuration already exists, skipping...")
 			return nil
 		}
-		
+
 		// If it exists but no builder config, we'd need to merge JSON which is complex via SSH.
 		// For simplicity in Mushak, we'll just inform the user if we can't easily merge.
 		ui.PrintWarning("Custom /etc/docker/daemon.json exists. Please manually add 'builder' GC config.")

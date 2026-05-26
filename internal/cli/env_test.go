@@ -37,15 +37,15 @@ func TestUpdateEnvFile(t *testing.T) {
 			expected: "A=3\nB=2\nC=4\n",
 		},
 		{
-			name:    "preserve comments",
-			content: "# this is a comment\nA=1\n",
-			updates: map[string]string{"A": "2"},
+			name:     "preserve comments",
+			content:  "# this is a comment\nA=1\n",
+			updates:  map[string]string{"A": "2"},
 			expected: "# this is a comment\nA=2\n",
 		},
 		{
-			name:    "preserve empty lines",
-			content: "A=1\n\nB=2\n",
-			updates: map[string]string{"A": "3"},
+			name:     "preserve empty lines",
+			content:  "A=1\n\nB=2\n",
+			updates:  map[string]string{"A": "3"},
 			expected: "A=3\n\nB=2\n",
 		},
 	}

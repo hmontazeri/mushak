@@ -25,7 +25,7 @@ func TestRedeployCommand(t *testing.T) {
 	if redeployCmd.RunE == nil {
 		t.Error("redeployCmd.RunE should not be nil")
 	}
-	
+
 	requiredDescriptions := []string{
 		"Trigger",
 		"redeployment",

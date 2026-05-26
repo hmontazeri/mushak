@@ -130,8 +130,8 @@ func TestSaveDeployConfig(t *testing.T) {
 	// Change to temp directory
 	tmpDir := t.TempDir()
 	oldWd, _ := os.Getwd()
-	defer os.Chdir(oldWd)
-	os.Chdir(tmpDir)
+	defer func() { _ = os.Chdir(oldWd) }()
+	_ = os.Chdir(tmpDir)
 
 	cfg := &DeployConfig{
 		AppName:    "testapp",
@@ -198,11 +198,11 @@ func TestLoadDeployConfig(t *testing.T) {
 	// Change to temp directory
 	tmpDir := t.TempDir()
 	oldWd, _ := os.Getwd()
-	defer os.Chdir(oldWd)
-	os.Chdir(tmpDir)
+	defer func() { _ = os.Chdir(oldWd) }()
+	_ = os.Chdir(tmpDir)
 
 	// Create config directory and file
-	os.MkdirAll(".mushak", 0755)
+	_ = os.MkdirAll(".mushak", 0755)
 
 	configContent := `app_name: myapp
 host: server.example.com
@@ -251,8 +251,8 @@ func TestLoadDeployConfig_NonExistent(t *testing.T) {
 	// Change to temp directory with no config
 	tmpDir := t.TempDir()
 	oldWd, _ := os.Getwd()
-	defer os.Chdir(oldWd)
-	os.Chdir(tmpDir)
+	defer func() { _ = os.Chdir(oldWd) }()
+	_ = os.Chdir(tmpDir)
 
 	_, err := LoadDeployConfig()
 	if err == nil {
@@ -264,8 +264,8 @@ func TestSaveAndLoadDeployConfig_RoundTrip(t *testing.T) {
 	// Change to temp directory
 	tmpDir := t.TempDir()
 	oldWd, _ := os.Getwd()
-	defer os.Chdir(oldWd)
-	os.Chdir(tmpDir)
+	defer func() { _ = os.Chdir(oldWd) }()
+	_ = os.Chdir(tmpDir)
 
 	originalCfg := &DeployConfig{
 		AppName:    "roundtrip",

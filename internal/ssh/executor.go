@@ -45,7 +45,7 @@ func (e *Executor) RunWithContext(ctx context.Context, cmd string) (string, erro
 
 	select {
 	case <-ctx.Done():
-		session.Signal(ssh.SIGKILL)
+		_ = session.Signal(ssh.SIGKILL)
 		return "", ctx.Err()
 	case err := <-errChan:
 		if err != nil {

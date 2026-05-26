@@ -9,12 +9,12 @@ import (
 
 // AppConfig represents the mushak.yaml configuration
 type AppConfig struct {
-	InternalPort        int      `yaml:"internal_port"`
-	HealthPath          string   `yaml:"health_path"`
-	HealthTimeout       int      `yaml:"health_timeout"`
-	ServiceName         string   `yaml:"service_name"`
-	PersistentServices  []string `yaml:"persistent_services"`
-	CacheLimit          string   `yaml:"cache_limit"` // e.g. "10GB" or "24h"
+	InternalPort       int      `yaml:"internal_port"`
+	HealthPath         string   `yaml:"health_path"`
+	HealthTimeout      int      `yaml:"health_timeout"`
+	ServiceName        string   `yaml:"service_name"`
+	PersistentServices []string `yaml:"persistent_services"`
+	CacheLimit         string   `yaml:"cache_limit"` // e.g. "10GB" or "24h"
 }
 
 // DefaultConfig returns the default configuration

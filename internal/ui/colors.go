@@ -5,9 +5,9 @@ import "github.com/fatih/color"
 // Theme colors based on mushak brand palette
 var (
 	// Primary brand colors (blues)
-	Brand1 = color.New(color.FgHiCyan).SprintFunc()    // #48cae4 - light cyan
-	Brand2 = color.New(color.FgCyan).SprintFunc()      // #0077b6 - cyan blue
-	Brand3 = color.New(color.FgBlue).SprintFunc()      // #023e8a - dark blue
+	Brand1 = color.New(color.FgHiCyan).SprintFunc() // #48cae4 - light cyan
+	Brand2 = color.New(color.FgCyan).SprintFunc()   // #0077b6 - cyan blue
+	Brand3 = color.New(color.FgBlue).SprintFunc()   // #023e8a - dark blue
 
 	// Semantic colors
 	Success = color.New(color.FgGreen).SprintFunc()
@@ -36,8 +36,8 @@ const ASCIIArt = `
 // PrintBanner prints the mushak ASCII art banner in brand colors
 func PrintBanner() {
 	cyan := color.New(color.FgCyan)
-	cyan.Println(ASCIIArt)
-	color.New(color.FgHiBlack).Println("    Zero-config, zero-downtime deployments to your Linux server")
+	cyan.Print(ASCIIArt)
+	color.New(color.FgHiBlack).Printf("    Zero-config, zero-downtime deployments to your Linux server\n")
 	println()
 }
 

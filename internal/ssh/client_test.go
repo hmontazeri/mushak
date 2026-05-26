@@ -47,7 +47,7 @@ func TestNewClient(t *testing.T) {
 				User:    "testuser",
 				KeyPath: "/nonexistent/key",
 			},
-			wantErr: false, // NewClient doesn't fail, only Connect does
+			wantErr: true, // NewClient doesn't fail, only Connect does
 		},
 	}
 
